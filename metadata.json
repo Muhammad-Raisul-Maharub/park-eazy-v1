@@ -1,0 +1,7 @@
+{
+  "name": " Park-Eazy V1",
+  "description": "A modern, feature-rich parking finder and reservation system built for Bangladesh with React, TypeScript, and Leaflet. Find, reserve, and manage your parking with ease.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
