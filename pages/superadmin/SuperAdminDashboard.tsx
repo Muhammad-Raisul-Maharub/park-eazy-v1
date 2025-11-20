@@ -54,8 +54,8 @@ const SuperAdminDashboard: React.FC = () => {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Users & Financials */}
-                <StatCard icon={Users} title="Total Users" value={totalUsers.toString()} change={5} changeType="increase" className="bg-white dark:bg-slate-800 border-l-4 border-l-blue-500" />
-                <StatCard icon={UserCog} title="Admins" value={totalAdmins.toString()} change={1} changeType="increase" className="bg-white dark:bg-slate-800 border-l-4 border-l-indigo-500" />
+                <StatCard icon={Users} title="Total Users" value={totalUsers.toString()} change={5} changeType="increase" className="bg-white dark:bg-slate-800 border-l-4 border-l-primary" />
+                <StatCard icon={UserCog} title="Admins" value={totalAdmins.toString()} change={1} changeType="increase" className="bg-white dark:bg-slate-800 border-l-4 border-l-secondary" />
                 <StatCard icon={CircleDollarSign} title="Revenue" value={formatCurrency(totalRevenue)} change={15} changeType="increase" className="bg-white dark:bg-slate-800 border-l-4 border-l-emerald-500" />
                 <StatCard icon={Clock} title="Occupancy" value={`${occupancyRate.toFixed(1)}%`} className="bg-white dark:bg-slate-800 border-l-4 border-l-amber-500" />
                 

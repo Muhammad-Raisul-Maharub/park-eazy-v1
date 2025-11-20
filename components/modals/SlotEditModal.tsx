@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, useMap, useMapEvents, ZoomControl } fr
 import L from 'leaflet';
 import { ParkingSlot, ParkingSlotType, ParkingSlotStatus } from '../../types';
 import Button from '../common/Button';
-import { X, MapPin, Search, Loader2, LocateFixed, CheckCircle } from 'lucide-react';
+import { X, MapPin, Search, Loader2, LocateFixed, CheckCircle, DollarSign } from 'lucide-react';
 import Card from '../common/Card';
 import { allFeaturesList, featureIcons } from '../../utils/constants';
 import { geocodeWithRateLimit, GeocodedLocation } from '../../utils/geocoding';
@@ -86,7 +86,6 @@ interface SlotEditModalProps {
 
 const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, slot, userLocation }) => {
     const [formData, setFormData] = useState<Partial<ParkingSlot>>({});
-    const [isMapMode, setIsMapMode] = useState(false);
     const [mapCenter, setMapCenter] = useState<[number, number]>(userLocation || chittagongCoords);
     const [mapZoom, setMapZoom] = useState(13);
     
@@ -101,7 +100,6 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
     const prevSlotId = useRef(slot?.id);
 
     useEffect(() => {
-        // Initialize form data only when modal opens or the slot being edited changes
         if (isOpen && (!prevIsOpen.current || slot?.id !== prevSlotId.current)) {
             const defaultLocation: [number, number] = userLocation || chittagongCoords;
             const initialData = slot || {};
@@ -119,14 +117,12 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
             const newCenter = newFormData.location || defaultLocation;
             setMapCenter(newCenter);
             setMapZoom(newFormData.location ? 16 : 13);
-            setIsMapMode(false); // Ensure map starts closed
         }
 
         prevIsOpen.current = isOpen;
         prevSlotId.current = slot?.id;
 
         if (!isOpen) {
-            setIsMapMode(false);
             setSearchQuery('');
             setSearchResults([]);
         }
@@ -162,7 +158,6 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
         const newLocation: [number, number] = [latlng.lat, latlng.lng];
         setFormData(prev => ({ ...prev, location: newLocation }));
         
-        // Reverse geocode to update address automatically
         try {
              const results = await geocodeWithRateLimit(`${latlng.lat}, ${latlng.lng}`);
              if (results.length > 0) {
@@ -177,7 +172,7 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
         const newLocation: [number, number] = [result.lat, result.lon];
         setMapCenter(newLocation);
         setMapZoom(17);
-        setFormData(prev => ({ ...prev, location: newLocation, address: result.displayName })); // Auto-fill address
+        setFormData(prev => ({ ...prev, location: newLocation, address: result.displayName })); 
         setSearchResults([]);
         setSearchQuery('');
     };
@@ -197,7 +192,6 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
                 setFormData(prev => ({ ...prev, location: newLoc }));
                 setIsLocating(false);
 
-                // Reverse geocode to autofill address
                 try {
                    const results = await geocodeWithRateLimit(`${latitude}, ${longitude}`);
                    if (results.length > 0) {
@@ -249,165 +243,164 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
         onSave(finalSlot);
     };
 
-    const handleOpenMap = () => {
-        setIsMapMode(true);
-        // If opening map and no location is set, set default immediately so marker is visible
-        if (!formData.location) {
-            const defaultLoc: [number, number] = userLocation || chittagongCoords;
-            setFormData(prev => ({ ...prev, location: defaultLoc }));
-            setMapCenter(defaultLoc);
-            setMapZoom(16);
-            
-            // Attempt to pre-fill address for the default location
-            geocodeWithRateLimit(`${defaultLoc[0]}, ${defaultLoc[1]}`).then(results => {
-                 if (results.length > 0 && !formData.address) {
-                      setFormData(prev => ({ ...prev, address: results[0].displayName }));
-                 }
-            });
-        } else {
-             setMapCenter(formData.location);
-             setMapZoom(17);
-        }
-    };
-
-    const inputClasses = "block w-full p-2.5 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg focus:border-primary focus:ring-primary";
+    // Custom dark inputs style
+    const inputClasses = "block w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all";
+    const labelClasses = "block text-xs font-medium mb-1.5 text-slate-400 uppercase tracking-wide";
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-[1200] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="slot-modal-title" ref={modalRef}>
-            <Card className="w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-slideUp">
-                <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white" id="slot-modal-title">{formData.id ? 'Edit Slot' : 'Add New Slot'}</h2>
-                    <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700" aria-label="Close modal"><X size={20} /></button>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1200] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="slot-modal-title" ref={modalRef}>
+            <Card className="w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden animate-slideUp !p-0 !bg-slate-900 border border-slate-700 shadow-2xl">
+                
+                <div className="flex justify-between items-center p-5 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md z-10">
+                    <h2 className="text-2xl font-bold text-white tracking-tight" id="slot-modal-title">
+                        {formData.id ? 'Edit Slot Details' : 'Add New Slot'}
+                    </h2>
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors" aria-label="Close modal">
+                        <X size={20} />
+                    </button>
                 </div>
                 
-                <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto flex-1">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300" htmlFor="slot-name">Slot Name *</label>
-                            <input type="text" id="slot-name" name="name" value={formData.name || ''} onChange={handleChange} required className={inputClasses}/>
-                        </div>
-                            <div>
-                            <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300" htmlFor="slot-address">Address *</label>
-                            <textarea id="slot-address" name="address" value={formData.address || ''} onChange={handleChange} required className={`${inputClasses} h-20`} rows={2}></textarea>
-                            <p className="text-xs text-slate-500 mt-1">Address auto-updates when moving the map marker</p>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300" htmlFor="slot-type">Vehicle Type *</label>
-                            <select id="slot-type" name="type" value={formData.type} onChange={handleChange} className={inputClasses}>
-                                {Object.values(ParkingSlotType).map(type => <option key={type} value={type}>{type}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300" htmlFor="slot-price">Price/Hour (৳) *</label>
-                            <input type="number" id="slot-price" name="pricePerHour" value={formData.pricePerHour || ''} onChange={handleChange} required min="0" className={inputClasses}/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300" htmlFor="slot-status">Status *</label>
-                            <select id="slot-status" name="status" value={formData.status} onChange={handleChange} className={inputClasses}>
-                                {Object.values(ParkingSlotStatus).map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                        </div>
-                        
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">Location *</label>
-                            
-                            {isMapMode ? (
-                                <div className="relative w-full h-[400px] rounded-xl overflow-hidden border-2 border-primary shadow-inner mt-2 animate-fadeIn">
-                                    {/* Search Bar Overlay */}
-                                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] w-[90%] max-w-md">
-                                        <div className="relative">
-                                            <input 
-                                                type="text" 
-                                                value={searchQuery} 
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                placeholder="Search location..." 
-                                                className="w-full pl-10 pr-4 py-2 rounded-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 shadow-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                            />
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                            {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" size={18} />}
-                                        </div>
-                                        {searchResults.length > 0 && (
-                                            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
-                                                {searchResults.map((result, idx) => (
-                                                    <button 
-                                                        key={idx}
-                                                        type="button"
-                                                        onClick={() => handleSearchResultClick(result)}
-                                                        className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm text-slate-800 dark:text-slate-200 border-b dark:border-slate-700 last:border-0"
-                                                    >
-                                                        {result.displayName}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto relative">
+                    {/* Map Section - Taking prominence */}
+                    <div className="relative h-[400px] w-full bg-slate-800 border-b border-slate-700 group">
+                        <MapContainer center={mapCenter} zoom={mapZoom} className="h-full w-full" zoomControl={false}>
+                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
+                            <MapEventsHandler onMapClick={handleMapClick} center={mapCenter} zoom={mapZoom} />
+                            {formData.location && <DraggableMarker position={formData.location} onDragEnd={handleMapClick} />}
+                            <ZoomControl position="bottomright" />
+                        </MapContainer>
 
-                                    <MapContainer center={mapCenter} zoom={mapZoom} className="h-full w-full" zoomControl={false}>
-                                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
-                                            <MapEventsHandler onMapClick={handleMapClick} center={mapCenter} zoom={mapZoom} />
-                                            {formData.location && <DraggableMarker position={formData.location} onDragEnd={handleMapClick} />}
-                                            <ZoomControl position="bottomright" />
-                                    </MapContainer>
-
-                                    <button 
-                                        type="button"
-                                        onClick={handleLocateMe} 
-                                        disabled={isLocating}
-                                        className="absolute bottom-20 right-4 z-[1000] bg-white dark:bg-slate-800 p-3 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none"
-                                        title="Locate Me"
-                                    >
-                                        {isLocating ? <Loader2 className="w-5 h-5 animate-spin text-primary"/> : <LocateFixed className="w-5 h-5" />}
-                                    </button>
-
-                                    <button 
-                                        type="button"
-                                        onClick={() => setIsMapMode(false)}
-                                        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-slate-900 text-white px-6 py-2 rounded-full shadow-lg font-bold hover:bg-slate-800 transition-all border border-white/20 transform hover:scale-105"
-                                    >
-                                        Confirm Location
-                                    </button>
+                        {/* Floating Search Bar */}
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] w-[90%] max-w-md">
+                            <div className="relative group-focus-within:ring-4 ring-primary/20 rounded-full transition-all">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Search className="h-5 w-5 text-slate-400" />
                                 </div>
-                            ) : (
-                                <div className="mt-1 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-primary/50 transition-colors text-center">
-                                        <Button type="button" onClick={handleOpenMap} className="mx-auto">
-                                        <MapPin className="mr-2 h-4 w-4" /> 
-                                        {formData.location ? 'Adjust Location' : 'Set Location on Map'}
-                                        </Button>
-                                        {formData.location ? (
-                                        <p className="text-sm text-green-600 dark:text-green-400 mt-3 font-medium flex items-center justify-center gap-1">
-                                            <CheckCircle className="w-4 h-4" /> Location Set ({formData.location[0].toFixed(4)}, {formData.location[1].toFixed(4)})
-                                        </p>
-                                        ) : (
-                                        <p className="text-sm text-slate-400 mt-3">Click to open map and drag marker to set location</p>
-                                        )}
+                                <input 
+                                    type="text" 
+                                    value={searchQuery} 
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search location..." 
+                                    className="w-full pl-11 pr-4 py-3.5 rounded-full bg-slate-900/90 border border-slate-600 text-white shadow-xl focus:outline-none focus:border-primary backdrop-blur-md placeholder-slate-400"
+                                />
+                                {isSearching && <div className="absolute inset-y-0 right-4 flex items-center"><Loader2 className="h-5 w-5 text-primary animate-spin" /></div>}
+                            </div>
+                            {searchResults.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto border border-slate-700">
+                                    {searchResults.map((result, idx) => (
+                                        <button 
+                                            key={idx}
+                                            type="button"
+                                            onClick={() => handleSearchResultClick(result)}
+                                            className="w-full text-left px-5 py-3 hover:bg-slate-800 text-sm text-slate-200 border-b border-slate-800 last:border-0 transition-colors"
+                                        >
+                                            {result.displayName}
+                                        </button>
+                                    ))}
                                 </div>
                             )}
                         </div>
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">Features</label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {allFeaturesList.map(feature => {
-                                const Icon = featureIcons[feature];
-                                const isChecked = formData.features?.includes(feature) ?? false;
-                                return (
-                                    <label key={feature} className={`flex items-center gap-2 p-2.5 rounded-lg border-2 cursor-pointer transition-all ${isChecked ? 'border-primary bg-primary/10' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'}`}>
-                                        <input type="checkbox" checked={isChecked} onChange={() => handleFeatureChange(feature)} className="h-4 w-4 rounded text-primary focus:ring-primary bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600" />
-                                        {Icon && <Icon className={`w-5 h-5 ${isChecked ? 'text-primary' : 'text-slate-500'}`} />}
-                                        <span className={`font-medium text-sm ${isChecked ? 'text-slate-800 dark:text-slate-100' : 'text-slate-600 dark:text-slate-300'}`}>{feature}</span>
-                                    </label>
-                                );
-                            })}
+
+                        {/* Floating Locate Me Button */}
+                        <button 
+                            type="button"
+                            onClick={handleLocateMe} 
+                            disabled={isLocating}
+                            className="absolute bottom-20 right-4 z-[1000] bg-white dark:bg-slate-800 p-3 rounded-full shadow-xl border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none transform transition-transform active:scale-95"
+                            title="Locate Me"
+                        >
+                            {isLocating ? <Loader2 className="w-5 h-5 animate-spin text-primary"/> : <LocateFixed className="w-5 h-5" />}
+                        </button>
+
+                        {/* Floating Confirm Button Badge */}
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000]">
+                            <div className="bg-slate-900/90 backdrop-blur-md text-white px-6 py-2.5 rounded-full shadow-2xl border border-slate-700 flex items-center gap-2 pointer-events-none">
+                                {formData.location ? (
+                                    <>
+                                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                                        <span className="text-sm font-bold">Location Set</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <MapPin className="w-4 h-4 text-amber-500 animate-bounce" />
+                                        <span className="text-sm font-bold">Click Map to Set Location</span>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div className="pt-2 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700 mt-4">
-                        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                        <Button type="submit">{formData.id ? 'Update Slot' : 'Create Slot'}</Button>
+
+                    {/* Form Fields Section */}
+                    <div className="p-6 space-y-6 bg-slate-900">
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Left Column */}
+                            <div className="space-y-5">
+                                <div>
+                                    <label className={labelClasses} htmlFor="slot-name">Vehicle Type *</label>
+                                    <select id="slot-type" name="type" value={formData.type} onChange={handleChange} className={inputClasses}>
+                                        {Object.values(ParkingSlotType).map(type => <option key={type} value={type}>{type}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClasses} htmlFor="slot-status">Status *</label>
+                                    <select id="slot-status" name="status" value={formData.status} onChange={handleChange} className={inputClasses}>
+                                        {Object.values(ParkingSlotStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                     <label className={labelClasses} htmlFor="slot-name">Location Details *</label>
+                                     <textarea id="slot-address" name="address" value={formData.address || ''} onChange={handleChange} required className={`${inputClasses} h-[120px] resize-none`} placeholder="Address auto-fills from map..." />
+                                      <p className="text-[10px] text-slate-500 mt-1.5 text-right">Address auto-updates when moving the map marker</p>
+                                </div>
+                            </div>
+
+                            {/* Right Column */}
+                            <div className="space-y-5">
+                                 <div>
+                                    <label className={labelClasses} htmlFor="slot-price">Price/Hour (৳) *</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <span className="text-slate-400 font-bold">৳</span>
+                                        </div>
+                                        <input type="number" id="slot-price" name="pricePerHour" value={formData.pricePerHour || ''} onChange={handleChange} required min="0" className={`${inputClasses} pl-10`} placeholder="50"/>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClasses} htmlFor="slot-name">Slot Name/ID *</label>
+                                    <input type="text" id="slot-name" name="name" value={formData.name || ''} onChange={handleChange} required className={inputClasses} placeholder="e.g. A-101"/>
+                                </div>
+                                <div>
+                                    <label className={labelClasses}>Features</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {allFeaturesList.map(feature => {
+                                            const Icon = featureIcons[feature];
+                                            const isChecked = formData.features?.includes(feature) ?? false;
+                                            return (
+                                                <label key={feature} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200 group ${isChecked ? 'border-primary bg-primary/10' : 'border-slate-700 bg-slate-800 hover:border-slate-500'}`}>
+                                                    <div className={`w-5 h-5 rounded-md flex items-center justify-center border ${isChecked ? 'bg-primary border-primary' : 'border-slate-500 bg-transparent'}`}>
+                                                        {isChecked && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+                                                        <input type="checkbox" checked={isChecked} onChange={() => handleFeatureChange(feature)} className="hidden" />
+                                                    </div>
+                                                    <span className={`text-sm font-medium ${isChecked ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>{feature}</span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </form>
+
+                <div className="p-5 bg-slate-800/50 border-t border-slate-800 flex justify-end gap-4 backdrop-blur-sm">
+                    <Button type="button" variant="secondary" onClick={onClose} className="!bg-transparent !border-slate-600 !text-slate-300 hover:!bg-slate-800">Cancel</Button>
+                    <Button type="button" onClick={handleSubmit} className="px-8 shadow-lg shadow-primary/25">
+                        {formData.id ? 'Update Slot' : 'Confirm Location'}
+                    </Button>
+                </div>
             </Card>
         </div>
     );
