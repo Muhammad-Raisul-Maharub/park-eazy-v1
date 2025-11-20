@@ -8,7 +8,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { LogContext } from '../../contexts/LogContext';
 import FullPageLoader from '../../components/common/FullPageLoader';
 import { ParkingSlot, ParkingSlotStatus, ParkingSlotType, UserRole } from '../../types';
-import { Search, LocateFixed, Car, SlidersHorizontal, Loader2, MapPin, X, Bike, Truck, Video, Shield, Building2, KeyRound, Sparkles, Star, Check, Navigation, ArrowRight, Plus, Edit, Trash2, AlertTriangle, Info, CircleDollarSign, CalendarClock, History } from 'lucide-react';
+import { Search, LocateFixed, Car, SlidersHorizontal, Loader2, MapPin, X, Bike, Truck, Video, Shield, Building2, KeyRound, Sparkles, Star, Check, Navigation, ArrowRight, Plus, Edit, Trash2, AlertTriangle, Info, CircleDollarSign, CalendarClock, History, Minus } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { getVehicleMarkerIcon, getHighlightIcon, searchedLocationIcon, userLocationIcon } from '../../utils/mapHelpers';
 import { geocodeWithRateLimit } from '../../utils/geocoding';
@@ -565,6 +565,14 @@ const MapPage: React.FC = () => {
         }
     };
 
+    const handleZoomIn = () => {
+        if (map) map.zoomIn();
+    };
+
+    const handleZoomOut = () => {
+        if (map) map.zoomOut();
+    };
+
     const handleAddSlot = () => { setSlotToEdit(null); setIsSlotEditModalOpen(true); };
     const handleEditSlot = (slot: ParkingSlot) => { setSlotToEdit(slot); setIsSlotEditModalOpen(true); };
     const handleDeleteSlotClick = (slot: ParkingSlot) => { setSlotToEdit(slot); setIsConfirmDeleteOpen(true); };
@@ -599,7 +607,6 @@ const MapPage: React.FC = () => {
                     {userLocation && accuracy && <Circle center={userLocation} radius={accuracy} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.15, weight: 1.5, dashArray: '5, 5', stroke: true }} />}
                     {searchedLocation && <Marker position={searchedLocation} icon={searchedLocationIcon()}><Popup>Searched Location</Popup></Marker>}
                     {selectedSlot && <Marker position={selectedSlot.location} icon={getHighlightIcon(selectedSlot)} zIndexOffset={1000} />}
-                    <ZoomControl position="topleft" />
                 </MapContainer>
                 
                  <div ref={searchContainerRef} className="absolute top-4 left-1/2 -translate-x-1/2 z-[1200] w-[92%] sm:w-[95%] max-w-lg space-y-2 map-controls-container" onClick={e => e.stopPropagation()}>
@@ -786,37 +793,60 @@ const MapPage: React.FC = () => {
                     )}
                 </div>
                 
-                 
-                 <div className="absolute bottom-36 sm:bottom-8 right-4 z-[1100] flex flex-col items-center gap-4 map-controls-container" onClick={e => e.stopPropagation()}>
-                    {isAdmin && (
-                        <button
-                            onClick={handleAddSlot}
-                            className="w-14 h-14 flex items-center justify-center rounded-full shadow-2xl shadow-primary/30 transition-all bg-primary text-white hover:bg-primary-600 hover:scale-110 active:scale-95"
-                            title="Add Parking Slot"
+                 {/* Modified Map Controls Cluster - Separated and Spaced */}
+                 <div className="absolute bottom-28 sm:bottom-8 right-4 z-[1100] flex flex-col items-center map-controls-container" onClick={e => e.stopPropagation()}>
+                    
+                    <div className="flex flex-col gap-3 mb-4">
+                        {isAdmin && (
+                            <button
+                                onClick={handleAddSlot}
+                                className="w-11 h-11 flex items-center justify-center rounded-full shadow-xl bg-primary text-white hover:bg-primary-600 transition-all hover:scale-110 active:scale-95"
+                                title="Add Parking Slot"
+                            >
+                                <Plus className="w-6 h-6" />
+                            </button>
+                        )}
+
+                        {!isAdmin && (
+                        <button 
+                            onClick={() => {
+                                setIsSmartSuggestionsEnabled(!isSmartSuggestionsEnabled);
+                                if(!isSmartSuggestionsEnabled) setShowSuggestion(true);
+                            }}
+                            className={`w-11 h-11 rounded-full shadow-xl transition-all duration-300 flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:scale-110 active:scale-95 ${isSmartSuggestionsEnabled ? 'bg-amber-400 text-white hover:bg-amber-500 shadow-amber-400/30' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`} 
+                            title={isSmartSuggestionsEnabled ? "Disable Smart Suggestions" : "Enable Smart Suggestions"}
                         >
-                            <Plus className="w-7 h-7" />
+                            <Sparkles className="w-5 h-5" />
                         </button>
-                    )}
-                    {!isAdmin && (
-                    <button 
-                        onClick={() => {
-                            setIsSmartSuggestionsEnabled(!isSmartSuggestionsEnabled);
-                            if(!isSmartSuggestionsEnabled) setShowSuggestion(true);
-                        }}
-                        className={`w-12 h-12 rounded-full shadow-xl transition-all duration-300 flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:scale-110 active:scale-95 ${isSmartSuggestionsEnabled ? 'bg-amber-400 text-white hover:bg-amber-500 shadow-amber-400/30' : 'bg-white dark:bg-slate-800 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`} 
-                        title={isSmartSuggestionsEnabled ? "Disable Smart Suggestions" : "Enable Smart Suggestions"}
-                    >
-                        <Sparkles className="w-6 h-6" />
-                    </button>
-                    )}
-                    <button 
-                        onClick={handleLocateClick} 
-                        disabled={isLocating}
-                        className={`w-12 h-12 flex items-center justify-center rounded-full shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 border border-slate-200 dark:border-slate-700 ${isFollowingUser ? 'bg-blue-500 text-white shadow-blue-500/30' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'}`} 
-                        title={isFollowingUser ? "Tracking Active" : "Locate Me"}
-                    >
-                        {isLocating ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : isFollowingUser ? <Navigation className="w-6 h-6 fill-current animate-pulse" /> : <LocateFixed className={`w-6 h-6 ${userLocation ? 'text-blue-500' : ''}`} />}
-                    </button>
+                        )}
+                        
+                        <button 
+                            onClick={handleLocateClick} 
+                            disabled={isLocating}
+                            className={`w-11 h-11 flex items-center justify-center rounded-full shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 border border-slate-200 dark:border-slate-700 ${isFollowingUser ? 'bg-blue-500 text-white shadow-blue-500/30' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'}`} 
+                            title={isFollowingUser ? "Tracking Active" : "Locate Me"}
+                        >
+                            {isLocating ? <Loader2 className="w-5 h-5 animate-spin text-primary" /> : isFollowingUser ? <Navigation className="w-5 h-5 fill-current animate-pulse" /> : <LocateFixed className={`w-5 h-5 ${userLocation ? 'text-blue-500' : ''}`} />}
+                        </button>
+                    </div>
+
+                    {/* Zoom Controls - Separated Group */}
+                    <div className="flex flex-col bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <button
+                            onClick={handleZoomIn}
+                            className="p-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors border-b border-slate-100 dark:border-slate-700 active:bg-slate-100 dark:active:bg-slate-600"
+                            title="Zoom In"
+                        >
+                            <Plus className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={handleZoomOut}
+                            className="p-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors active:bg-slate-100 dark:active:bg-slate-600"
+                            title="Zoom Out"
+                        >
+                            <Minus className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
                 
                 <div className="bottom-sheet-container relative z-[1150]">

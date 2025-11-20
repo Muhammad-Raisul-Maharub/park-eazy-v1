@@ -1,16 +1,13 @@
 
 import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { ParkingSlot, PaymentMethod, Reservation, SavedPaymentMethod, SavedCard, SavedMobileWallet } from '../../types';
-import Card from '../../components/common/Card';
+import { ParkingSlot, PaymentMethod, Reservation, SavedCard, SavedMobileWallet } from '../../types';
 import Button from '../../components/common/Button';
-import { ChevronLeft, CreditCard, ShieldCheck, PlusCircle, CheckCircle, AlertCircle, Lock, Calendar, User, Smartphone } from 'lucide-react';
+import { ChevronLeft, CreditCard, PlusCircle, CheckCircle, Lock, Calendar, Smartphone, User, AlertCircle } from 'lucide-react';
 import { ReservationContext } from '../../contexts/ReservationContext';
 import { PaymentContext } from '../../contexts/PaymentContext';
-import { BkashIcon, NagadIcon, RocketIcon, VisaIcon, MastercardIcon, AmexIcon, GenericCardIcon } from '../../components/common/PaymentIcons';
-import { getCardBrand as getCardBrandUtil, validateCard, validateMobileWallet } from '../../utils/validation';
-
-type CardBrand = 'visa' | 'mastercard' | 'amex' | 'other';
+import { BkashIcon, NagadIcon, RocketIcon } from '../../components/common/PaymentIcons';
+import { validateCard, validateMobileWallet } from '../../utils/validation';
 
 interface NewReservationState {
     isExtension?: false;
@@ -31,10 +28,6 @@ interface ExtensionState {
     newEndTime: string;
 }
 
-const getCardBrand = (number: string): CardBrand => {
-    return getCardBrandUtil(number);
-};
-
 const PaymentPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -47,21 +40,15 @@ const PaymentPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     
-    const [selectedSavedMethodId, setSelectedSavedMethodId] = useState<string | null>(null);
-    const [showNewMethodForm, setShowNewMethodForm] = useState(true);
-    
     // Card Form State
     const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvc: '', name: '' });
-    const [cardErrors, setCardErrors] = useState<Record<string, string | undefined>>({});
-    const [cardTouched, setCardTouched] = useState<Record<string, boolean>>({});
     const [isCardFlipped, setIsCardFlipped] = useState(false);
 
     // Mobile Wallet Form State
     const [mobileWalletNumber, setMobileWalletNumber] = useState('');
-    const [mobileWalletError, setMobileWalletError] = useState<string | undefined>();
-    const [mobileWalletTouched, setMobileWalletTouched] = useState(false);
     
     const [saveMethod, setSaveMethod] = useState(true);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     if (!state?.slot || !reservationContext || !paymentContext) {
         navigate('/map');
@@ -69,40 +56,68 @@ const PaymentPage: React.FC = () => {
     }
 
     const { addReservation, extendReservation } = reservationContext;
-    const { savedMethods, addMethod } = paymentContext;
+    const { addMethod } = paymentContext;
     
     const paymentMethods = [
         { id: PaymentMethod.CARD, name: 'Card', icon: <CreditCard className="w-5 h-5" /> },
-        { id: PaymentMethod.BKASH, name: 'bKash', icon: <BkashIcon /> },
-        { id: PaymentMethod.NAGAD, name: 'Nagad', icon: <NagadIcon /> },
-        { id: PaymentMethod.ROCKET, name: 'Rocket', icon: <RocketIcon /> },
+        { id: PaymentMethod.BKASH, name: 'bKash', icon: <BkashIcon className="w-5 h-5" /> },
+        { id: PaymentMethod.NAGAD, name: 'Nagad', icon: <NagadIcon className="w-5 h-5" /> },
+        { id: PaymentMethod.ROCKET, name: 'Rocket', icon: <RocketIcon className="w-5 h-5" /> },
     ];
 
-    useEffect(() => {
-        if(showNewMethodForm) {
-            if (selectedMethod === PaymentMethod.CARD) {
-                setCardErrors(validateCard(cardDetails));
-            } else {
-                setMobileWalletError(validateMobileWallet(mobileWalletNumber));
+    const validateField = (name: string, value: string): string => {
+        let error = '';
+        if (selectedMethod === PaymentMethod.CARD) {
+            if (name === 'number') {
+                const cleanNumber = value.replace(/\s/g, '');
+                if (!value) error = "Card number is required";
+                else if (!/^\d{16}$/.test(cleanNumber)) error = "Card number must be 16 digits";
+            }
+            if (name === 'name') {
+                if (!value.trim()) error = "Card holder name is required";
+                else if (value.trim().length < 2) error = "Name must be at least 2 characters";
+            }
+            if (name === 'expiry') {
+                if (!value) error = "Expiry date is required";
+                else if (!/^\d{2}\/\d{2}$/.test(value)) {
+                    error = "Format must be MM/YY";
+                } else {
+                    const [monthStr, yearStr] = value.split('/');
+                    const month = parseInt(monthStr, 10);
+                    const year = parseInt(yearStr, 10);
+                    const now = new Date();
+                    const currentYear = now.getFullYear() % 100;
+                    const currentMonth = now.getMonth() + 1;
+                    
+                    if (month < 1 || month > 12) error = "Invalid month (01-12)";
+                    else if (year < currentYear || (year === currentYear && month < currentMonth)) error = "Card has expired";
+                }
+            }
+            if (name === 'cvc') {
+                if (!value) error = "CVC is required";
+                else if (!/^\d{3,4}$/.test(value)) error = "CVC must be 3 or 4 digits";
             }
         } else {
-            setCardErrors({});
-            setMobileWalletError(undefined);
+            if (name === 'mobileNumber') {
+                const cleanedNumber = value.replace(/[-\s]/g, '');
+                if (!value) error = "Account number is required";
+                else if (!/^01[3-9]\d{8}$/.test(cleanedNumber)) error = "Invalid number (must be 11 digits starting 01)";
+            }
         }
-    }, [cardDetails, mobileWalletNumber, selectedMethod, showNewMethodForm]);
+        return error;
+    };
 
     const isFormValid = useMemo(() => {
-        if (selectedSavedMethodId && !showNewMethodForm) return true;
-        if (!showNewMethodForm) return false;
-        
         if (selectedMethod === PaymentMethod.CARD) {
-             const hasRequiredFields = !!cardDetails.number && !!cardDetails.expiry && !!cardDetails.cvc && !!cardDetails.name;
-             const hasNoErrors = Object.keys(validateCard(cardDetails)).length === 0;
-             return hasRequiredFields && hasNoErrors;
+             const { number, expiry, cvc, name } = cardDetails;
+             return !validateField('number', number) && 
+                    !validateField('expiry', expiry) && 
+                    !validateField('cvc', cvc) && 
+                    !validateField('name', name) &&
+                    number !== '' && expiry !== '' && cvc !== '' && name !== '';
         }
-        
-        return !!mobileWalletNumber && !validateMobileWallet(mobileWalletNumber);
-    }, [selectedSavedMethodId, showNewMethodForm, selectedMethod, cardDetails, mobileWalletNumber]);
+        return !!mobileWalletNumber && !validateField('mobileNumber', mobileWalletNumber);
+    }, [selectedMethod, cardDetails, mobileWalletNumber]);
 
     const handlePayment = async () => {
         if (!isFormValid) return;
@@ -110,7 +125,7 @@ const PaymentPage: React.FC = () => {
         setIsLoading(true);
 
         try {
-            if (showNewMethodForm && saveMethod) {
+            if (saveMethod) {
                 if (selectedMethod === PaymentMethod.CARD) {
                     addMethod({ 
                         id: `card-${Date.now()}`, 
@@ -157,7 +172,13 @@ const PaymentPage: React.FC = () => {
         if (name === 'number') formattedValue = value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim().slice(0, 19);
         else if (name === 'expiry') formattedValue = value.replace(/[^\d/]/g, '').replace(/(\d{2})(\d)/, '$1/$2').slice(0, 5);
         else if (name === 'cvc') formattedValue = value.replace(/[^\d]/g, '').slice(0, 4);
+        
         setCardDetails(prev => ({ ...prev, [name]: formattedValue }));
+        
+        // Clear error when typing
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: '' }));
+        }
     };
 
     const handleMobileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,14 +186,18 @@ const PaymentPage: React.FC = () => {
         if (value.length > 3 && value.charAt(3) !== '-') value = value.slice(0, 3) + '-' + value.slice(3);
         if (value.length > 8 && value.charAt(8) !== '-') value = value.slice(0, 8) + '-' + value.slice(8);
         setMobileWalletNumber(value.slice(0, 13));
+
+        if (errors['mobileNumber']) {
+            setErrors(prev => ({ ...prev, mobileNumber: '' }));
+        }
     };
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-        const { name } = e.target;
-        if (selectedMethod === PaymentMethod.CARD) setCardTouched(prev => ({ ...prev, [name]: true }));
-        else setMobileWalletTouched(true);
-
+        const { name, value } = e.target;
         if(name === 'cvc') setIsCardFlipped(false);
+        
+        const error = validateField(name, value);
+        setErrors(prev => ({ ...prev, [name]: error }));
     };
 
     const backLink = state.isExtension ? '/active-reservation' : ((state as NewReservationState).fromMap ? '/map' : '/reservation-confirmation');
@@ -184,210 +209,276 @@ const PaymentPage: React.FC = () => {
         return { slot, startTime, endTime };
     }, [state]);
 
-    const inputClasses = "w-full pl-11 pr-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-white placeholder-slate-500";
-    const iconClasses = "absolute left-4 top-1/2 -translate-y-1/2 text-slate-400";
+    const inputClasses = "w-full px-4 py-4 bg-[#0f172a] border border-slate-700 rounded-xl focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition-all text-white placeholder-slate-600 font-medium";
+    const errorInputClasses = "border-red-500 focus:border-red-500 focus:ring-red-500";
+    const iconClasses = "absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5";
+    const labelClasses = "block text-xs font-bold text-slate-400 uppercase mb-2 ml-1 tracking-wide";
 
     return (
-         <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 pb-12 px-4 sm:px-6 animate-fadeIn">
+         <div className="max-w-7xl mx-auto space-y-8 pb-12 px-4 sm:px-6 lg:px-8 animate-fadeIn">
             {/* Header with Back Button */}
-            <div className="pt-8 flex items-center gap-4">
+            <div className="pt-8 flex items-center gap-4 mb-2">
                  <Link 
                     to={backLink} 
                     state={backLinkState} 
-                    className="p-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:border-primary transition-all duration-300 group"
+                    className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white transition-all duration-200 shadow-lg hover:shadow-primary/20 group"
                 >
                     <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                 </Link>
                 <h1 className="text-3xl font-bold text-white tracking-tight">Checkout</h1>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
                 {/* LEFT COLUMN: Payment Details */}
                 <div className="lg:col-span-7 space-y-6">
-                    <Card className="!bg-slate-900/60 !border-slate-800 backdrop-blur-sm p-8">
-                        <h2 className="text-xl font-bold mb-6 text-white flex items-center gap-2">
-                            <CreditCard className="w-5 h-5 text-primary"/> Payment Method
+                    <div className="bg-slate-900/60 border border-slate-800 backdrop-blur-sm p-6 sm:p-8 rounded-3xl">
+                        <h2 className="text-lg font-bold mb-6 text-white flex items-center gap-2">
+                            <CreditCard className="w-5 h-5 text-fuchsia-500"/> Payment Method
                         </h2>
                         
                         {/* Payment Method Tabs */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+                        <div className="grid grid-cols-4 gap-4 mb-8">
                             {paymentMethods.map(method => (
                                 <button 
                                     key={method.id} 
-                                    onClick={() => setSelectedMethod(method.id)} 
-                                    className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all duration-200 ${selectedMethod === method.id ? 'bg-primary/10 border-primary text-primary' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-800'}`}
+                                    onClick={() => {
+                                        setSelectedMethod(method.id);
+                                        setErrors({});
+                                    }} 
+                                    className={`flex flex-col items-center justify-center gap-2 py-4 rounded-xl border transition-all duration-200 ${selectedMethod === method.id ? 'bg-slate-800 border-fuchsia-500 text-fuchsia-500 shadow-[0_0_15px_rgba(217,70,239,0.15)] transform scale-105' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700 hover:bg-slate-900'}`}
                                 > 
-                                    <span className="transform scale-110">{method.icon}</span>
-                                    <span className="text-xs font-bold">{method.name}</span>
+                                    <span className="transform scale-100">{method.icon}</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider mt-1">{method.name}</span>
                                 </button>
                             ))}
                         </div>
 
-                        {/* Add New Method Toggle */}
-                        <div className="mb-6">
-                            <button 
-                                onClick={() => { setShowNewMethodForm(true); setSelectedSavedMethodId(null); }}
-                                className={`w-full flex items-center justify-between p-4 border-2 rounded-xl transition-all duration-200 group ${showNewMethodForm ? 'border-primary ring-1 ring-primary/50 bg-primary/5' : 'border-dashed border-slate-700 hover:border-primary/50 hover:bg-slate-800'}`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-full transition-colors ${showNewMethodForm ? 'bg-primary text-white' : 'bg-slate-800 text-slate-500 group-hover:text-primary'}`}>
-                                        <PlusCircle className="w-5 h-5"/> 
-                                    </div>
-                                    <span className="font-bold text-white">Add a new {selectedMethod === PaymentMethod.CARD ? "Card" : selectedMethod}</span>
-                                </div>
-                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${showNewMethodForm ? 'border-primary bg-primary' : 'border-slate-600'}`}>
-                                    {showNewMethodForm && <div className="w-2 h-2 rounded-full bg-white" />}
-                                </div>
-                            </button>
-                        </div>
-
-                        {/* New Method Form */}
-                        <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showNewMethodForm ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                        {/* Expanded Form */}
+                        <div>
                             {selectedMethod === PaymentMethod.CARD ? (
-                                <div className="space-y-5">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Card Number</label>
-                                        <div className="relative">
-                                            <CreditCard className={iconClasses}/>
-                                            <input name="number" type="text" value={cardDetails.number} onChange={handleCardInputChange} onBlur={handleBlur} placeholder="0000 0000 0000 0000" className={inputClasses} />
+                                <div className="rounded-2xl border-2 border-fuchsia-500/50 bg-slate-900/50 p-1 overflow-hidden">
+                                    <div className="flex items-center justify-between p-4 bg-fuchsia-500/10 rounded-xl mb-6 mx-1 mt-1">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-fuchsia-500 flex items-center justify-center text-white shadow-lg shadow-fuchsia-500/30">
+                                                <PlusCircle size={20} />
+                                            </div>
+                                            <span className="font-bold text-white">Add a new Card</span>
                                         </div>
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Card Holder</label>
-                                        <div className="relative">
-                                            <User className={iconClasses}/>
-                                            <input name="name" type="text" value={cardDetails.name} onChange={handleCardInputChange} onBlur={handleBlur} placeholder="e.g. John Doe" className={inputClasses}/>
-                                        </div>
+                                        <div className="w-5 h-5 rounded-full border-[5px] border-fuchsia-500 bg-white shadow-sm"></div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-6">
+                                    <div className="px-4 pb-4 space-y-6">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Expiry</label>
+                                            <label className={labelClasses}>Card Number</label>
                                             <div className="relative">
-                                                <Calendar className={iconClasses}/>
-                                                <input name="expiry" type="text" value={cardDetails.expiry} onChange={handleCardInputChange} onBlur={handleBlur} placeholder="MM/YY" className={inputClasses}/>
+                                                 <CreditCard className={`${iconClasses} !left-4`} />
+                                                 <input 
+                                                    name="number" 
+                                                    type="text" 
+                                                    value={cardDetails.number} 
+                                                    onChange={handleCardInputChange} 
+                                                    onBlur={handleBlur} 
+                                                    placeholder="0000 0000 0000 0000" 
+                                                    className={`${inputClasses} pl-12 ${errors.number ? errorInputClasses : ''}`} 
+                                                />
+                                            </div>
+                                            {errors.number && <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium animate-fadeIn"><AlertCircle className="w-3 h-3"/> {errors.number}</p>}
+                                        </div>
+                                        
+                                        <div>
+                                            <label className={labelClasses}>Card Holder Name</label>
+                                            <div className="relative">
+                                                <User className={iconClasses} />
+                                                <input 
+                                                    name="name" 
+                                                    type="text" 
+                                                    value={cardDetails.name} 
+                                                    onChange={handleCardInputChange} 
+                                                    onBlur={handleBlur} 
+                                                    placeholder="e.g. John Doe" 
+                                                    className={`${inputClasses} pl-12 ${errors.name ? errorInputClasses : ''}`}
+                                                />
+                                            </div>
+                                            {errors.name && <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium animate-fadeIn"><AlertCircle className="w-3 h-3"/> {errors.name}</p>}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div>
+                                                <label className={labelClasses}>Expiry</label>
+                                                <div className="relative">
+                                                    <Calendar className={iconClasses}/>
+                                                    <input 
+                                                        name="expiry" 
+                                                        type="text" 
+                                                        value={cardDetails.expiry} 
+                                                        onChange={handleCardInputChange} 
+                                                        onBlur={handleBlur} 
+                                                        placeholder="MM/YY" 
+                                                        className={`${inputClasses} pl-12 ${errors.expiry ? errorInputClasses : ''}`}
+                                                    />
+                                                </div>
+                                                {errors.expiry && <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium animate-fadeIn"><AlertCircle className="w-3 h-3"/> {errors.expiry}</p>}
+                                            </div>
+                                            <div>
+                                                <label className={labelClasses}>CVC</label>
+                                                <div className="relative">
+                                                    <Lock className={iconClasses}/>
+                                                    <input 
+                                                        name="cvc" 
+                                                        type="text" 
+                                                        value={cardDetails.cvc} 
+                                                        onChange={handleCardInputChange} 
+                                                        onFocus={() => setIsCardFlipped(true)} 
+                                                        onBlur={handleBlur} 
+                                                        placeholder="123" 
+                                                        className={`${inputClasses} pl-12 ${errors.cvc ? errorInputClasses : ''}`}
+                                                    />
+                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 text-xs font-bold tracking-widest pointer-events-none">
+                                                        ●●●
+                                                    </div>
+                                                </div>
+                                                {errors.cvc && <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium animate-fadeIn"><AlertCircle className="w-3 h-3"/> {errors.cvc}</p>}
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">CVC</label>
-                                            <div className="relative">
-                                                <Lock className={iconClasses}/>
-                                                <input name="cvc" type="text" value={cardDetails.cvc} onChange={handleCardInputChange} onFocus={() => setIsCardFlipped(true)} onBlur={handleBlur} placeholder="123" className={inputClasses}/>
-                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold tracking-widest pointer-events-none">
-                                                    ...
+
+                                        <div className="flex items-center pt-2">
+                                            <label className="flex items-center cursor-pointer group select-none">
+                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${saveMethod ? 'bg-fuchsia-500 border-fuchsia-500' : 'border-slate-600 bg-slate-800'}`}>
+                                                    {saveMethod && <CheckCircle className="w-3.5 h-3.5 text-white" />}
                                                 </div>
-                                            </div>
+                                                <input type="checkbox" checked={saveMethod} onChange={(e) => setSaveMethod(e.target.checked)} className="hidden" />
+                                                <span className="ml-3 text-sm font-medium text-slate-400 group-hover:text-white transition-colors">Save securely for future use</span>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                    <div>
-                                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Enter {selectedMethod} number</label>
-                                    <div className="relative">
+                                <div className="rounded-2xl border-2 border-slate-700 bg-slate-900/50 p-6">
+                                    <label className={labelClasses}>Enter {selectedMethod} number</label>
+                                    <div className="relative mt-2">
                                         <Smartphone className={iconClasses} />
-                                        <input type="tel" value={mobileWalletNumber} onChange={handleMobileInputChange} onBlur={handleBlur} placeholder="01X-XXXX-XXXX" className={inputClasses} />
+                                        <input 
+                                            type="tel" 
+                                            name="mobileNumber"
+                                            value={mobileWalletNumber} 
+                                            onChange={handleMobileInputChange} 
+                                            onBlur={handleBlur} 
+                                            placeholder="01X-XXXX-XXXX" 
+                                            className={`${inputClasses} pl-12 ${errors.mobileNumber ? errorInputClasses : ''}`} 
+                                        />
                                     </div>
+                                    {errors.mobileNumber && <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1.5 font-medium animate-fadeIn"><AlertCircle className="w-3 h-3"/> {errors.mobileNumber}</p>}
+                                    
+                                    <div className="flex items-center pt-6">
+                                            <label className="flex items-center cursor-pointer group select-none">
+                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${saveMethod ? 'bg-fuchsia-500 border-fuchsia-500' : 'border-slate-600 bg-slate-800'}`}>
+                                                    {saveMethod && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+                                                </div>
+                                                <input type="checkbox" checked={saveMethod} onChange={(e) => setSaveMethod(e.target.checked)} className="hidden" />
+                                                <span className="ml-3 text-sm font-medium text-slate-400 group-hover:text-white transition-colors">Save account for future use</span>
+                                            </label>
+                                        </div>
                                 </div>
                             )}
-                                <div className="flex items-center pt-4">
-                                    <label className="flex items-center cursor-pointer group select-none">
-                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${saveMethod ? 'bg-primary border-primary' : 'border-slate-600 bg-slate-800'}`}>
-                                            {saveMethod && <CheckCircle className="w-3.5 h-3.5 text-white" />}
-                                        </div>
-                                        <input type="checkbox" checked={saveMethod} onChange={(e) => setSaveMethod(e.target.checked)} className="hidden" />
-                                        <span className="ml-3 text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Save securely for future use</span>
-                                    </label>
-                                </div>
                         </div>
-                    </Card>
+                    </div>
                 </div>
                 
-                {/* RIGHT COLUMN: Order Summary */}
-                <div className="lg:col-span-5 space-y-6">
+                {/* RIGHT COLUMN: Summary & Card */}
+                <div className="lg:col-span-5 flex flex-col gap-10">
                      {/* Card Visualizer (Only for Card) */}
-                     <div className={`transition-all duration-500 ease-in-out transform ${selectedMethod === PaymentMethod.CARD && showNewMethodForm ? 'opacity-100 max-h-[300px] translate-y-0' : 'opacity-0 max-h-0 -translate-y-4 overflow-hidden'}`}>
-                        <div className="card-flipper aspect-[1.586] w-full max-w-[340px] mx-auto" >
-                           <div className={`card-flipper-inner ${isCardFlipped ? 'flipped' : ''}`}>
-                             <div className="card-front bg-slate-900 text-white p-6 flex flex-col justify-between rounded-2xl shadow-2xl border border-slate-700/50 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-black"></div>
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
+                     {selectedMethod === PaymentMethod.CARD && (
+                        <div className="relative w-full max-w-[380px] mx-auto aspect-[1.586] group perspective-[1000px]">
+                           <div className={`relative w-full h-full transition-all duration-500 [transform-style:preserve-3d] ${isCardFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
+                             
+                             {/* CARD FRONT */}
+                             <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-[#1e293b] text-white p-6 flex flex-col justify-between rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden z-20">
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#1e293b] to-[#0f172a]"></div>
                                 
-                                <div className="relative z-10">
-                                    <div className="flex justify-between items-start">
-                                        <div className="w-12 h-8 bg-amber-200/20 rounded-md backdrop-blur-md border border-white/10"></div>
-                                        <div className="italic font-bold text-xl tracking-wider opacity-80">VISA</div>
-                                    </div>
-                                    <p className="font-mono text-xl mt-8 tracking-widest text-white drop-shadow-md">{cardDetails.number || '•••• •••• •••• ••••'}</p>
+                                <div className="relative z-10 flex justify-between items-start">
+                                    <div className="w-12 h-9 bg-amber-200/20 rounded-md backdrop-blur-sm border border-white/20"></div>
+                                    <div className="italic font-bold text-2xl tracking-wider text-white/90 font-serif">VISA</div>
                                 </div>
-                                <div className="relative z-10 flex justify-between items-end text-sm mt-6">
+                                
+                                <div className="relative z-10 mt-2">
+                                    <p className="font-mono text-xl sm:text-2xl tracking-[0.15em] text-white drop-shadow-md break-all">
+                                        {cardDetails.number ? cardDetails.number : '•••• •••• •••• ••••'}
+                                    </p>
+                                </div>
+                                
+                                <div className="relative z-10 flex justify-between items-end text-sm mt-4">
                                     <div>
-                                        <p className="text-slate-400 text-[9px] uppercase tracking-widest mb-1">Card Holder</p>
-                                        <p className="font-medium uppercase tracking-wider truncate max-w-[160px] text-base">{cardDetails.name || 'YOUR NAME'}</p>
+                                        <p className="text-slate-400 text-[9px] uppercase tracking-widest mb-1 font-bold">Card Holder</p>
+                                        <p className="font-bold uppercase tracking-wider truncate max-w-[180px] text-xs sm:text-sm">{cardDetails.name || 'YOUR NAME'}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-slate-400 text-[9px] uppercase tracking-widest mb-1">Expires</p>
-                                        <p className="font-medium tracking-widest text-base">{cardDetails.expiry || 'MM/YY'}</p>
+                                        <p className="text-slate-400 text-[9px] uppercase tracking-widest mb-1 font-bold">Expires</p>
+                                        <p className="font-bold tracking-widest text-xs sm:text-sm">{cardDetails.expiry || 'MM/YY'}</p>
                                     </div>
                                 </div>
                              </div>
-                             {/* Card Back */}
-                             <div className="card-back bg-slate-800 text-white rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50 relative">
+
+                             {/* CARD BACK */}
+                             <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#1e293b] text-white rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50 z-10">
                                  <div className="bg-black h-10 w-full mt-6 relative z-10"></div>
-                                 <div className="p-6 relative z-10">
-                                     <div className="bg-white text-slate-900 text-right p-2 rounded-sm font-mono text-lg flex items-center justify-end gap-3 shadow-inner mt-2">
-                                         <span className="text-[10px] text-slate-400 font-sans uppercase tracking-wider mr-2">CVC</span>
-                                         <span className="tracking-widest font-bold">{cardDetails.cvc || '•••'}</span>
+                                 <div className="px-6 pt-4 pb-8 relative z-10">
+                                     <div className="bg-white text-slate-900 h-10 w-full rounded-sm flex items-center justify-end pr-3 font-mono text-lg tracking-widest relative">
+                                         <span className="absolute left-0 top-0 bottom-0 w-full bg-[url('https://www.transparenttextures.com/patterns/diagonal-striped-brick.png')] opacity-10"></span>
+                                         <span className="relative z-20 font-bold mr-2 text-sm">CVC</span>
+                                         <span className="relative z-20 font-bold">{cardDetails.cvc || '•••'}</span>
                                      </div>
+                                 </div>
+                                 <div className="absolute bottom-6 right-6 opacity-50 grayscale">
+                                      <div className="italic font-bold text-xl tracking-wider text-white/90 font-serif">VISA</div>
                                  </div>
                              </div>
                            </div>
                         </div>
-                    </div>
+                     )}
 
-                    <Card className="!bg-slate-900 !border-slate-800 shadow-2xl sticky top-6 p-0 overflow-hidden">
-                        <div className="p-6 border-b border-slate-800">
-                            <h2 className="text-lg font-bold text-white">Order Summary</h2>
-                        </div>
-                        
-                        <div className="p-6 space-y-4">
-                            <div className="flex justify-between items-center group">
-                                <span className="text-slate-400 text-sm font-medium">Parking Slot</span> 
-                                <span className="font-bold text-white bg-slate-800 px-2 py-1 rounded-md">{state.slot.name}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-slate-400 text-sm font-medium">Vehicle Type</span> 
-                                <span className="font-semibold text-slate-300">{state.slot.type}</span>
-                            </div>
-                            <div className="border-t border-dashed border-slate-800 my-2"></div>
-                            {state.isExtension ? ( 
-                                <div className="flex justify-between items-center">
-                                    <span className="text-slate-400 text-sm font-medium">Extra Time</span> 
-                                    <span className="font-semibold text-slate-300">{state.hoursToAdd} Hour{state.hoursToAdd > 1 ? 's' : ''}</span>
-                                </div> 
-                            ) : ( 
-                                <div className="flex justify-between items-center">
-                                    <span className="text-slate-400 text-sm font-medium">Duration</span> 
-                                    <span className="font-semibold text-slate-300">{(state as NewReservationState).duration.toFixed(2)} Hours</span>
-                                </div> 
-                            )}
-                            <div className="flex justify-between items-center">
-                                <span className="text-slate-400 text-sm font-medium">Rate</span> 
-                                <span className="font-semibold text-slate-300">৳{state.slot.pricePerHour}/hr</span>
-                            </div>
+                    <div className="bg-slate-900/60 border border-slate-800 backdrop-blur-sm shadow-2xl p-0 overflow-hidden rounded-3xl">
+                        <div className="p-6 sm:p-8">
+                            <h2 className="text-lg font-bold text-white mb-6">Order Summary</h2>
                             
-                            <div className="pt-4 mt-4 border-t border-slate-800 flex justify-between items-end"> 
-                                <span className="text-slate-400 font-bold pb-1">Total Amount</span> 
-                                <span className="text-3xl font-extrabold text-primary">৳{state.totalCost.toFixed(2)}</span> 
+                            <div className="space-y-5">
+                                <div className="flex justify-between items-center group pb-5 border-b border-slate-800">
+                                    <span className="text-slate-400 text-sm font-bold uppercase tracking-wide">Parking Slot</span> 
+                                    <span className="font-mono font-bold text-slate-200 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">{state.slot.name}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400 text-sm font-medium">Vehicle Type</span> 
+                                    <span className="font-bold text-slate-200">{state.slot.type}</span>
+                                </div>
+                                
+                                {state.isExtension ? ( 
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-slate-400 text-sm font-medium">Extra Time</span> 
+                                        <span className="font-bold text-slate-200">{state.hoursToAdd} Hour{state.hoursToAdd > 1 ? 's' : ''}</span>
+                                    </div> 
+                                ) : ( 
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-slate-400 text-sm font-medium">Duration</span> 
+                                        <span className="font-bold text-slate-200">{(state as NewReservationState).duration.toFixed(2)} Hour</span>
+                                    </div> 
+                                )}
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400 text-sm font-medium">Rate</span> 
+                                    <span className="font-bold text-slate-200">৳{state.slot.pricePerHour}/hr</span>
+                                </div>
+                                
+                                <div className="pt-6 mt-4 border-t border-slate-800 flex justify-between items-center"> 
+                                    <span className="text-slate-300 font-bold">Total Amount</span> 
+                                    <span className="text-4xl font-extrabold text-fuchsia-500">৳{state.totalCost.toFixed(2)}</span> 
+                                </div>
                             </div>
                         </div>
 
-                        <div className="p-6 bg-slate-950/30 border-t border-slate-800">
+                        <div className="p-6 bg-slate-950/80 border-t border-slate-800">
                             <Button 
                                 onClick={handlePayment} 
                                 isLoading={isLoading && !isSuccess} 
                                 disabled={!isFormValid || isLoading} 
-                                className="w-full shadow-lg shadow-primary/20 disabled:shadow-none !py-4 text-lg rounded-xl font-bold active:scale-[0.98] transition-all" 
+                                className="w-full shadow-lg shadow-fuchsia-500/20 disabled:shadow-none !py-4 text-lg rounded-xl font-bold active:scale-[0.98] transition-all bg-gradient-to-r from-fuchsia-600 to-violet-600 hover:from-fuchsia-500 hover:to-violet-500 border-none" 
                                 size="lg"
                             >
                                 {isSuccess ? (
@@ -399,12 +490,13 @@ const PaymentPage: React.FC = () => {
                                     isLoading ? 'Processing...' : `Pay ৳${state.totalCost.toFixed(2)}`
                                 )}
                             </Button>
-                            <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 mt-4 uppercase tracking-wider font-bold"> 
-                                <ShieldCheck className="w-3 h-3 text-emerald-500" /> 
-                                <span>Secure Encrypted Payment</span> 
-                            </div>
+                            {!isFormValid && !isLoading && (
+                                <p className="text-center text-xs text-red-400 mt-3 font-medium animate-fadeIn flex items-center justify-center gap-1">
+                                    <AlertCircle className="w-3 h-3" /> Please fix the errors to proceed.
+                                </p>
+                            )}
                         </div>
-                    </Card>
+                    </div>
                 </div>
             </div>
          </div>

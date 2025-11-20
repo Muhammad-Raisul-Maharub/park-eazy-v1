@@ -17,7 +17,7 @@ const ButtonComponent: React.FC<ButtonProps> = ({
   ...props 
 }) => {
   // Candyland Base: Rounded-full (Pill), Poppins font (inherited), Smooth transforms
-  const baseClasses = 'font-bold rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-opacity-50 flex items-center justify-center transform active:scale-95 shadow-sm relative overflow-hidden';
+  const baseClasses = 'font-bold rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-opacity-50 flex items-center justify-center transform active:scale-95 shadow-sm relative overflow-hidden disabled:active:scale-100';
   
   const variantClasses = {
     primary: 'bg-gradient-to-r from-fuchsia-500 to-violet-600 text-white hover:shadow-lg hover:shadow-fuchsia-500/40 hover:-translate-y-0.5 focus-visible:ring-fuchsia-300 border border-transparent',

@@ -19,7 +19,7 @@ const DonutChart: React.FC<{ data: { status: string, count: number, color: strin
 
     return (
         <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90">
-            <circle cx="100" cy="100" r={radius} fill="none" strokeWidth="20" className="text-slate-200 dark:text-slate-700" stroke="currentColor" />
+            <circle cx="100" cy="100" r={radius} fill="none" strokeWidth="20" className="text-slate-200 dark:text-slate-800" stroke="currentColor" />
             {data.map(({ count, color }, index) => {
                 const percentage = (count / total);
                 const strokeDasharray = `${percentage * circumference} ${circumference}`;
@@ -77,24 +77,24 @@ const AdminAnalyticsPage: React.FC = () => {
     ];
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-fadeIn">
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Admin Analytics</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard icon={TrendingUp} title="Occupancy Trend" value="+2.5%" change={2.5} changeType="increase" className="border-l-4 border-l-primary"/>
-                <StatCard icon={CircleDollarSign} title="Avg. Revenue/Slot" value={formatCurrency(350.75)} change={5} changeType="increase" className="border-l-4 border-l-emerald-500"/>
-                <StatCard icon={Clock} title="Peak Hours" value="5 PM - 8 PM" className="border-l-4 border-l-amber-500"/>
-                <StatCard icon={ParkingSquare} title="Most Used Slot Type" value="SUV" className="border-l-4 border-l-blue-500"/>
+                <StatCard icon={TrendingUp} title="Occupancy Trend" value="+2.5%" change={2.5} changeType="increase" className="border-l-4 border-l-primary dark:bg-slate-800"/>
+                <StatCard icon={CircleDollarSign} title="Avg. Revenue/Slot" value={formatCurrency(350.75)} change={5} changeType="increase" className="border-l-4 border-l-emerald-500 dark:bg-slate-800"/>
+                <StatCard icon={Clock} title="Peak Hours" value="5 PM - 8 PM" className="border-l-4 border-l-amber-500 dark:bg-slate-800"/>
+                <StatCard icon={ParkingSquare} title="Most Used Slot Type" value="SUV" className="border-l-4 border-l-blue-500 dark:bg-slate-800"/>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
+                <Card className="dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Revenue by Slot Type (Monthly)</h2>
                     <div className="space-y-5">
                         {revenueData.map(item => (
                             <div key={item.type} className="flex items-center group">
                                 <span className="w-24 text-sm font-bold text-slate-600 dark:text-slate-400">{item.type}</span>
-                                <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-4 overflow-hidden">
+                                <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-4 overflow-hidden">
                                     <div
                                         className="bg-gradient-to-r from-fuchsia-500 to-violet-600 h-full rounded-full flex items-center justify-end px-2 transition-all duration-500 group-hover:opacity-90"
                                         style={{ width: `${(item.revenue / maxRevenue) * 100}%` }}
@@ -106,7 +106,7 @@ const AdminAnalyticsPage: React.FC = () => {
                         ))}
                     </div>
                 </Card>
-                <Card>
+                <Card className="dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">Live Slot Status Distribution</h2>
                     <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-10">
                         <div className="relative transform hover:scale-105 transition-transform duration-300">
@@ -117,7 +117,7 @@ const AdminAnalyticsPage: React.FC = () => {
                                 const Icon = d.icon;
                                 const percentage = totalSlots > 0 ? ((d.count / totalSlots) * 100).toFixed(1) : "0.0";
                                 return (
-                                    <li key={d.status} className="flex items-center text-sm p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
+                                    <li key={d.status} className="flex items-center text-sm p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700">
                                         <div className={`p-2 rounded-lg ${d.color} bg-opacity-10 mr-3`}>
                                             <Icon className={`w-4 h-4 ${d.textColor}`} />
                                         </div>

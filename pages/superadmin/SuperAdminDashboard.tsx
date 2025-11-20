@@ -61,17 +61,17 @@ const SuperAdminDashboard: React.FC = () => {
                 
                 {/* Operations */}
                 <Link to="/manage-parkings" className="group">
-                    <StatCard icon={ParkingSquare} title="Slots" value={totalSlots.toString()} className="h-full hover:shadow-md transition-shadow" />
+                    <StatCard icon={ParkingSquare} title="Slots" value={totalSlots.toString()} className="h-full hover:shadow-md transition-shadow dark:bg-slate-800" />
                 </Link>
-                <StatCard icon={CheckCircle} title="Available" value={availableSlots.toString()} className="h-full" />
-                <StatCard icon={Car} title="Active Res." value={activeReservationsCount.toString()} className="h-full" />
-                <StatCard icon={ParkingSquare} title="Busy Slots" value={busySlots.toString()} className="h-full" />
+                <StatCard icon={CheckCircle} title="Available" value={availableSlots.toString()} className="h-full dark:bg-slate-800" />
+                <StatCard icon={Car} title="Active Res." value={activeReservationsCount.toString()} className="h-full dark:bg-slate-800" />
+                <StatCard icon={ParkingSquare} title="Busy Slots" value={busySlots.toString()} className="h-full dark:bg-slate-800" />
             </div>
 
             {/* Recent Activity & Status Breakdown */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                  {/* Recent Reservations Table */}
-                 <Card className="xl:col-span-2 border border-slate-200 dark:border-slate-700 shadow-md">
+                 <Card className="xl:col-span-2 border border-slate-200 dark:border-slate-700 shadow-md dark:bg-slate-800">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Recent Reservations</h2>
                     </div>
@@ -85,11 +85,11 @@ const SuperAdminDashboard: React.FC = () => {
                                     <th className="pb-3 pr-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Status</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                 {recentReservations.map(res => {
                                     const slot = getSlotById(res.slotId);
                                     return (
-                                        <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group">
+                                        <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer group">
                                             <td className="py-4 pl-2 font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary transition-colors">{slot?.name || 'N/A'}</td>
                                             <td className="py-4 text-xs font-mono text-slate-500 dark:text-slate-400">{res.userId.substring(0,8)}...</td>
                                             <td className="py-4 font-bold text-slate-700 dark:text-slate-200">{formatCurrency(res.totalCost)}</td>
@@ -105,10 +105,10 @@ const SuperAdminDashboard: React.FC = () => {
                  </Card>
 
                  {/* Slot Status Breakdown */}
-                 <Card className="border border-slate-200 dark:border-slate-700 flex flex-col shadow-md h-fit">
+                 <Card className="border border-slate-200 dark:border-slate-700 flex flex-col shadow-md h-fit dark:bg-slate-800">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Slot Status</h2>
                     
-                    <div className="w-full h-4 bg-slate-100 dark:bg-slate-800 rounded-full flex overflow-hidden mb-8 shadow-inner">
+                    <div className="w-full h-4 bg-slate-100 dark:bg-slate-700 rounded-full flex overflow-hidden mb-8 shadow-inner">
                         {slotStatusData.map((d, i) => (
                              <div 
                                 key={d.status} 
@@ -123,7 +123,7 @@ const SuperAdminDashboard: React.FC = () => {
                         {slotStatusData.map(d => {
                             const Icon = d.icon;
                             return (
-                                <div key={d.status} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 hover:border-slate-200 dark:hover:border-slate-600 transition-all">
+                                <div key={d.status} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700/50 hover:border-slate-200 dark:hover:border-slate-600 transition-all">
                                     <div className="flex items-center gap-3">
                                         <div className={`p-2 rounded-lg ${d.color} bg-opacity-10 dark:bg-opacity-20`}>
                                             <Icon className={`w-5 h-5 ${d.textColor}`} />

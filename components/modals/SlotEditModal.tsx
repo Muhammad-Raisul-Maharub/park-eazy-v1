@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { ParkingSlot, ParkingSlotType, ParkingSlotStatus } from '../../types';
 import Button from '../common/Button';
-import { X, MapPin, Search, Loader2, LocateFixed, CheckCircle, DollarSign } from 'lucide-react';
+import { X, MapPin, Search, Loader2, LocateFixed, CheckCircle, DollarSign, Plus, Minus } from 'lucide-react';
 import Card from '../common/Card';
 import { allFeaturesList, featureIcons } from '../../utils/constants';
 import { geocodeWithRateLimit, GeocodedLocation } from '../../utils/geocoding';
@@ -52,8 +52,12 @@ const DraggableMarker: React.FC<{ position: [number, number]; onDragEnd: (latlng
 };
 
 // --- Leaflet Helper Components ---
-const MapEventsHandler: React.FC<{ onMapClick: (latlng: L.LatLng) => void, center: [number, number], zoom: number }> = ({ onMapClick, center, zoom }) => {
+const MapEventsHandler: React.FC<{ onMapClick: (latlng: L.LatLng) => void, center: [number, number], zoom: number, setMap: (map: L.Map) => void }> = ({ onMapClick, center, zoom, setMap }) => {
     const map = useMap();
+    
+    useEffect(() => {
+        setMap(map);
+    }, [map, setMap]);
     
     // Click handler to move marker
     useMapEvents({ click: (e) => onMapClick(e.latlng) });
@@ -88,6 +92,7 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
     const [formData, setFormData] = useState<Partial<ParkingSlot>>({});
     const [mapCenter, setMapCenter] = useState<[number, number]>(userLocation || chittagongCoords);
     const [mapZoom, setMapZoom] = useState(13);
+    const [map, setMap] = useState<L.Map | null>(null);
     
     // Search State
     const [searchQuery, setSearchQuery] = useState('');
@@ -267,9 +272,8 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
                     <div className="relative h-[400px] w-full bg-slate-800 border-b border-slate-700 group">
                         <MapContainer center={mapCenter} zoom={mapZoom} className="h-full w-full" zoomControl={false}>
                             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
-                            <MapEventsHandler onMapClick={handleMapClick} center={mapCenter} zoom={mapZoom} />
+                            <MapEventsHandler onMapClick={handleMapClick} center={mapCenter} zoom={mapZoom} setMap={setMap} />
                             {formData.location && <DraggableMarker position={formData.location} onDragEnd={handleMapClick} />}
-                            <ZoomControl position="bottomright" />
                         </MapContainer>
 
                         {/* Floating Search Bar */}
@@ -303,16 +307,37 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
                             )}
                         </div>
 
-                        {/* Floating Locate Me Button */}
-                        <button 
-                            type="button"
-                            onClick={handleLocateMe} 
-                            disabled={isLocating}
-                            className="absolute bottom-20 right-4 z-[1000] bg-white dark:bg-slate-800 p-3 rounded-full shadow-xl border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none transform transition-transform active:scale-95"
-                            title="Locate Me"
-                        >
-                            {isLocating ? <Loader2 className="w-5 h-5 animate-spin text-primary"/> : <LocateFixed className="w-5 h-5" />}
-                        </button>
+                        {/* Map Controls (Zoom + Locate Me) */}
+                        <div className="absolute bottom-6 right-4 z-[1000] flex flex-col items-center gap-3">
+                            <button 
+                                type="button"
+                                onClick={handleLocateMe} 
+                                disabled={isLocating}
+                                className="w-11 h-11 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-xl border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none transform transition-transform active:scale-95"
+                                title="Locate Me"
+                            >
+                                {isLocating ? <Loader2 className="w-5 h-5 animate-spin text-primary"/> : <LocateFixed className="w-5 h-5" />}
+                            </button>
+                            
+                            <div className="flex flex-col bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 overflow-hidden">
+                                <button
+                                    type="button"
+                                    onClick={() => map?.zoomIn()}
+                                    className="p-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors border-b border-slate-200 dark:border-slate-600 active:bg-slate-100 dark:active:bg-slate-600"
+                                    title="Zoom In"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => map?.zoomOut()}
+                                    className="p-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors active:bg-slate-100 dark:active:bg-slate-600"
+                                    title="Zoom Out"
+                                >
+                                    <Minus className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
 
                         {/* Floating Confirm Button Badge */}
                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000]">
