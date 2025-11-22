@@ -49,11 +49,6 @@
   pointer-events: auto;
 }
 
-/* Fix map controls visibility */
-.map-controls-container {
-  z-index: 800 !important;
-  pointer-events: auto !important;
-}
 
 /* ===================================
    END CRITICAL FIXES
@@ -264,30 +259,6 @@ body {
   line-height: 30px;
 }
 
-/* Cluster size variations */
-.marker-cluster-small {
-  background-color: rgba(181, 226, 140, 0.6);
-}
-
-.marker-cluster-small div {
-  background-color: rgba(110, 204, 57, 0.6);
-}
-
-.marker-cluster-medium {
-  background-color: rgba(241, 211, 87, 0.6);
-}
-
-.marker-cluster-medium div {
-  background-color: rgba(240, 194, 12, 0.6);
-}
-
-.marker-cluster-large {
-  background-color: rgba(253, 156, 115, 0.6);
-}
-
-.marker-cluster-large div {
-  background-color: rgba(241, 128, 23, 0.6);
-}
 
 /* Custom Park-Eazy cluster colors (Blue theme) */
 .marker-cluster-small,
