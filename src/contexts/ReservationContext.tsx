@@ -25,11 +25,9 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Get auth context but don't require it to prevent loading deadlock
   const authContext = useContext(AuthContext);
-  if (!authContext) {
-    throw new Error("ReservationContext must be used within an AuthProvider");
-  }
-  const { user } = authContext;
+  const user = authContext?.user || null;
 
   useEffect(() => {
     const fetchData = async () => {
