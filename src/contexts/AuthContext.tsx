@@ -67,36 +67,59 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ]) as any;
 
         setSession(session);
-        if (session?.user) {
-          const profile = await fetchUserProfile(session.user.id, session.user.email!);
-          setUser(profile);
-        }
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
-        // Don't block app load on auth failure
-      } finally {
-        // ALWAYS stop loading, even on error
-        setLoading(false);
-      }
-    };
+        mounted.current = true;
 
-    initAuth();
+        // Timeout guard
+        const timeoutTimer = setTimeout(async () => {
+          if (mounted.current) {
+            console.error('Auth initialization timeout');
+            // Force cleanup if we time out
+            await supabase.auth.signOut();
+            localStorage.removeItem('sb-' + import.meta.env.VITE_SUPABASE_URL + '-auth-token');
+            setLoading(false);
+          }
+        }, 10000); // 10s timeout
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id, session.user.email!);
-        setUser(profile);
-      } else {
-        setUser(null);
-      }
-    });
+        // Check active session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!mounted.current) return;
+          clearTimeout(timeoutTimer);
+          setSession(session);
+          if (session?.user) {
+            fetchUserProfile(session.user.id, session.user.email!).then(profile => {
+              if (mounted.current) {
+                setUser(profile);
+                setLoading(false);
+              }
+            });
+          } else {
+            setLoading(false);
+          }
+        }).catch(err => {
+          console.error('Auth getSession error:', err);
+          if (mounted.current) setLoading(false);
+        });
 
-    return () => subscription.unsubscribe();
-  }, []);
+        // Listen for auth changes
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange(async (_event, session) => {
+          if (!mounted.current) return;
+          setSession(session);
+          if (session?.user) {
+            const profile = await fetchUserProfile(session.user.id, session.user.email!);
+            setUser(profile);
+          } else {
+            setUser(null);
+          }
+        });
+
+        return () => {
+          mounted.current = false;
+          clearTimeout(timeoutTimer);
+          subscription.unsubscribe();
+        };
+      }, []);
 
   // Login function with password authentication
   const login = useCallback(async (email: string, password: string): Promise<void> => {

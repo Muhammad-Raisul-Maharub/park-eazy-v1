@@ -66,7 +66,7 @@ const typeIcons: { [key in ParkingSlotType]: string } = {
 };
 
 export const getVehicleMarkerIcon = (status: ParkingSlotStatus, type: ParkingSlotType, state: { isHovered?: boolean, isClicked?: boolean, isNew?: boolean } = {}, slotId?: string) => {
-    const baseColor = statusColors[status];
+    const baseColor = statusColors[status] || '#94a3b8'; // Fallback to slate-400 if status is invalid
     const displayColor = state.isHovered ? adjustBrightness(baseColor, 20) : baseColor;
 
     let className = 'custom-marker-icon marker-float';
