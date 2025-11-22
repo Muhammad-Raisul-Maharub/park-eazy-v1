@@ -28,7 +28,7 @@ export const testSupabaseConnection = async (): Promise<boolean> => {
   try {
     console.log('🔄 Testing Supabase connection...');
     // Simple query to check connectivity
-    const { count, error } = await supabase.from('users').select('*', { count: 'exact', head: true });
+    const { count, error } = await supabase.from('user_profiles').select('*', { count: 'exact', head: true });
 
     if (error) {
       // If the error is because the table doesn't exist yet (404/42P01), it still means we connected to Supabase successfully

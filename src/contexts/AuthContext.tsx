@@ -27,9 +27,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchUserProfile = async (userId: string, email: string) => {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('user_id', userId)
         .single();
 
       if (error) {
@@ -144,9 +144,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return;
 
     const { error } = await supabase
-      .from('users')
+      .from('user_profiles')
       .update(updatedData)
-      .eq('id', user.id);
+      .eq('user_id', user.id);
 
     if (!error) {
       setUser(prev => prev ? { ...prev, ...updatedData } : null);

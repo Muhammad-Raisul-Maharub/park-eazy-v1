@@ -9,32 +9,38 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      users: {
+      user_profiles: {
         Row: {
           id: string
+          user_id: string
           email: string
           name: string
           role: 'user' | 'admin' | 'super_admin'
+          is_admin: boolean
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
+          user_id: string
           email: string
           name: string
           role?: 'user' | 'admin' | 'super_admin'
+          is_admin?: boolean
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
+          user_id?: string
           email?: string
           name?: string
           role?: 'user' | 'admin' | 'super_admin'
+          is_admin?: boolean
           updated_at?: string
         }
       }
-      parking_slots: {
+      parking_lots: {
         Row: {
           id: string
           name: string
