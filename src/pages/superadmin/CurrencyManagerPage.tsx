@@ -5,17 +5,17 @@ import { DollarSign, Edit } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 
 const initialRates = {
-  USD: 117.50,
-  EUR: 127.80,
-  GBP: 149.25,
-  INR: 1.41,
+    USD: 122.00,  // 1 USD = 122 BDT (Nov 22, 2025)
+    EUR: 141.00,  // 1 EUR = 141 BDT
+    GBP: 161.00,  // 1 GBP = 161 BDT
+    INR: 1.36,    // 1 INR = 1.36 BDT
 };
 
 const CurrencyManagerPage: React.FC = () => {
     const [rates, setRates] = useState(initialRates);
     const [editMode, setEditMode] = useState(false);
     const [tempRates, setTempRates] = useState(initialRates);
-    
+
     const handleRateChange = (currency: keyof typeof initialRates, value: string) => {
         const numericValue = parseFloat(value);
         if (!isNaN(numericValue)) {
@@ -40,7 +40,7 @@ const CurrencyManagerPage: React.FC = () => {
                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Currency Manager</h1>
                 {!editMode && <Button onClick={() => setEditMode(true)}><Edit className="w-4 h-4 mr-2" /> Change Rates</Button>}
             </div>
-            
+
             <Card>
                 <div className="flex items-center p-4 rounded-t-lg bg-primary/10 dark:bg-primary/20 border-b-2 border-primary">
                     <DollarSign className="w-8 h-8 text-primary" />
@@ -57,9 +57,9 @@ const CurrencyManagerPage: React.FC = () => {
                             <div key={currency} className="flex items-center justify-between">
                                 <label htmlFor={`rate-input-${currency}`} className="font-medium">{currency}</label>
                                 {editMode ? (
-                                    <input 
+                                    <input
                                         id={`rate-input-${currency}`}
-                                        type="number" 
+                                        type="number"
                                         step="0.01"
                                         value={rate}
                                         onChange={(e) => handleRateChange(currency as keyof typeof initialRates, e.target.value)}
