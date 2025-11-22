@@ -1,0 +1,475 @@
+/* ===================================
+   CRITICAL MAP FIXES
+   =================================== */
+
+/* Fix marker cluster visibility */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background-color: rgba(59, 130, 246, 0.4) !important;
+  width: 40px !important;
+  /* Matched to JS L.Point(40, 40) */
+  height: 40px !important;
+  z-index: 600 !important;
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background-color: #3b82f6 !important;
+  color: white !important;
+  font-weight: bold !important;
+  border-radius: 50% !important;
+  width: 30px !important;
+  /* Inner circle */
+  height: 30px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 5px !important;
+  /* Centered in 40px container */
+}
+
+/* Ensure custom markers are visible */
+.custom-marker-icon,
+.marker-float,
+.user-location-marker,
+.searched-location-marker,
+.highlight-marker-icon {
+  pointer-events: auto !important;
+  /* Removed z-index override to let Leaflet handle stacking */
+}
+
+/* Fix bottom sheet not covering markers */
+.bottom-sheet-container {
+  pointer-events: none;
+}
+
+.bottom-sheet-container>* {
+  pointer-events: auto;
+}
+
+/* Fix map controls visibility */
+.map-controls-container {
+  z-index: 800 !important;
+  pointer-events: auto !important;
+}
+
+/* ===================================
+   END CRITICAL FIXES
+   =================================== */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Leaflet Map Customization */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 0;
+  background-color: #f8fafc;
+  /* slate-50 */
+  font-family: 'Quicksand', sans-serif;
+}
+
+.dark .leaflet-container {
+  background-color: #0f172a;
+  /* slate-900 */
+}
+
+/* Custom Popup Styles */
+.leaflet-popup-content-wrapper {
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  padding: 0;
+  overflow: hidden;
+}
+
+.dark .leaflet-popup-content-wrapper {
+  background-color: #1e293b;
+  /* slate-800 */
+  color: #e2e8f0;
+  /* slate-200 */
+}
+
+.dark .leaflet-popup-tip {
+  background: #1e293b;
+  /* slate-800 */
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  /* slate-300 */
+  border-radius: 99px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+  /* slate-600 */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  /* slate-400 */
+}
+
+/* Global Body Styles */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Ensure all elements transition colors smoothly */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* Exclude transition for transform/opacity driven animations to avoid conflicts */
+.animate-fadeIn,
+.animate-slideUp,
+.marker-float,
+.pulse,
+.dot {
+  transition-property: none;
+}
+
+/* Focus Ring for Accessibility */
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  /* blue-500 */
+  outline-offset: 2px;
+}
+
+/* --- Animations --- */
+
+/* Floating Marker Animation */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.marker-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* User Location Marker Styles */
+.user-location-marker {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.user-location-marker .dot {
+  width: 16px;
+  height: 16px;
+  background-color: #3b82f6;
+  /* Blue-500 */
+  border: 3px solid white;
+  border-radius: 50%;
+  z-index: 20;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.user-location-marker .pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: rgba(59, 130, 246, 0.6);
+  z-index: 10;
+  animation: pulse-ring 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    width: 60px;
+    height: 60px;
+    opacity: 0;
+  }
+}
+
+/* ========================================
+   LEAFLET MARKER CLUSTER STYLES
+   Hardcoded to ensure compatibility with Vite/Vercel builds
+   ======================================== */
+
+/* Base cluster icon */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background-clip: padding-box;
+  border-radius: 20px;
+}
+
+.marker-cluster {
+  background-clip: padding-box;
+  border-radius: 20px;
+}
+
+.marker-cluster div {
+  width: 30px;
+  height: 30px;
+  margin-left: 5px;
+  margin-top: 5px;
+  text-align: center;
+  border-radius: 15px;
+  font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+.marker-cluster span {
+  line-height: 30px;
+}
+
+/* Cluster size variations */
+.marker-cluster-small {
+  background-color: rgba(181, 226, 140, 0.6);
+}
+
+.marker-cluster-small div {
+  background-color: rgba(110, 204, 57, 0.6);
+}
+
+.marker-cluster-medium {
+  background-color: rgba(241, 211, 87, 0.6);
+}
+
+.marker-cluster-medium div {
+  background-color: rgba(240, 194, 12, 0.6);
+}
+
+.marker-cluster-large {
+  background-color: rgba(253, 156, 115, 0.6);
+}
+
+.marker-cluster-large div {
+  background-color: rgba(241, 128, 23, 0.6);
+}
+
+/* Custom Park-Eazy cluster colors (Blue theme) */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  /* blue-500 with low opacity */
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background-color: #3b82f6 !important;
+  /* blue-500 */
+  color: white !important;
+  font-weight: 700 !important;
+  font-family: 'Quicksand', sans-serif !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Dark mode cluster colors */
+.dark .marker-cluster-small div,
+.dark .marker-cluster-medium div,
+.dark .marker-cluster-large div {
+  background-color: #2563eb !important;
+  /* blue-600 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* IE6-8 fallback (leaflet.markercluster compatibility) */
+.leaflet-oldie .marker-cluster-small {
+  background-color: rgb(181, 226, 140);
+}
+
+.leaflet-oldie .marker-cluster-small div {
+  background-color: rgb(110, 204, 57);
+}
+
+.leaflet-oldie .marker-cluster-medium {
+  background-color: rgb(241, 211, 87);
+}
+
+.leaflet-oldie .marker-cluster-medium div {
+  background-color: rgb(240, 194, 12);
+}
+
+.leaflet-oldie .marker-cluster-large {
+  background-color: rgb(253, 156, 115);
+}
+
+.leaflet-oldie .marker-cluster-large div {
+  background-color: rgb(241, 128, 23);
+}
+
+/* Hover effects */
+.marker-cluster:hover {
+  cursor: pointer;
+  transform: scale(1.1);
+}
+
+.marker-cluster div {
+  transition: all 0.3s ease;
+}
+
+/* Animation entrance */
+.leaflet-marker-icon.marker-cluster {
+  animation: cluster-pop 0.3s ease-out;
+}
+
+@keyframes cluster-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Coverage area on hover */
+.marker-cluster-cover-top {
+  fill: rgba(59, 130, 246, 0.1);
+  stroke: rgba(59, 130, 246, 0.4);
+  stroke-width: 2;
+}
+
+/* Spiderfy lines (when clusters expand) */
+.leaflet-cluster-spider-leg {
+  stroke: #3b82f6;
+  stroke-width: 2;
+  stroke-opacity: 0.6;
+  fill: none;
+  animation: spider-leg-draw 0.3s ease-out;
+}
+
+@keyframes spider-leg-draw {
+  from {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Auth Page Card Flipper (3D Effect for Credit Card) */
+.card-flipper {
+  perspective: 1000px;
+}
+
+.card-flipper-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.card-flipper-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* Animation Utilities */
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ensure buttons over map are clickable */
+.map-controls-container {
+  z-index: 1000;
+  pointer-events: auto;
+}

@@ -1,3 +1,4 @@
+
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { ReservationContext } from '../../contexts/ReservationContext';
 import Button from '../../components/common/Button';
@@ -12,16 +13,7 @@ import ConfirmationModal from '../../components/modals/ConfirmationModal';
 import { getGenericMarkerIcon } from '../../utils/mapHelpers';
 import { formatCurrency } from '../../utils/formatters';
 
-// Fix for default icon path issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
-
 const activeMarker = getGenericMarkerIcon('amber');
-
 
 const ActiveReservationPage: React.FC = () => {
   const reservationContext = useContext(ReservationContext);

@@ -8,9 +8,20 @@ import { X, MapPin, Search, Loader2, LocateFixed, CheckCircle, DollarSign, Plus,
 import Card from '../common/Card';
 import { allFeaturesList, featureIcons } from '../../utils/constants';
 import { geocodeWithRateLimit, GeocodedLocation } from '../../utils/geocoding';
-import { getGenericMarkerIcon } from '../../utils/mapHelpers';
 
-const activeMarkerIcon = getGenericMarkerIcon('blue');
+// Fix for default icon path issue in Leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+const activeMarkerIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+});
 
 const chittagongCoords: [number, number] = [22.3569, 91.8339];
 

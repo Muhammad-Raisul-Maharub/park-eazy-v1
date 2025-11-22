@@ -138,15 +138,66 @@ body {
   }
 }
 
-/* Cluster Customization */
+/* --- Robust Marker Cluster Styles --- */
+/* These ensure clusters are visible even if external CSS fails to load */
 .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
-  background-color: rgba(59, 130, 246, 0.4); /* blue-500 with opacity */
+  background-color: rgba(129, 140, 248, 0.6);
 }
 .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
-  background-color: #3b82f6; /* blue-500 */
-  color: white;
-  font-weight: bold;
+  width: 30px;
+  height: 30px;
+  margin-left: 5px;
+  margin-top: 5px;
+  text-align: center;
   border-radius: 50%;
+  font-family: 'Inter', sans-serif;
+  color: white;
+  line-height: 30px;
+  font-weight: bold;
+  font-size: 12px;
+  background-color: #6366f1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.marker-cluster {
+  background-clip: padding-box;
+  border-radius: 20px;
+}
+.marker-cluster div {
+  width: 30px;
+  height: 30px;
+  margin-left: 5px;
+  margin-top: 5px;
+  text-align: center;
+  border-radius: 15px;
+  font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+.marker-cluster span {
+  line-height: 30px;
+}
+
+/* Specific Cluster Colors */
+.marker-cluster-small {
+    background-color: rgba(16, 185, 129, 0.6); /* emerald-500 opacity */
+}
+.marker-cluster-small div {
+    background-color: #059669; /* emerald-600 */
+    color: white;
+}
+
+.marker-cluster-medium {
+    background-color: rgba(245, 158, 11, 0.6); /* amber-500 opacity */
+}
+.marker-cluster-medium div {
+    background-color: #d97706; /* amber-600 */
+    color: white;
+}
+
+.marker-cluster-large {
+    background-color: rgba(244, 63, 94, 0.6); /* rose-500 opacity */
+}
+.marker-cluster-large div {
+    background-color: #e11d48; /* rose-600 */
+    color: white;
 }
 
 /* Auth Page Card Flipper (3D Effect for Credit Card) */

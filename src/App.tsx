@@ -31,6 +31,7 @@ import CurrencyManagerPage from './pages/superadmin/CurrencyManagerPage';
 import SystemLogsPage from './pages/superadmin/SystemLogsPage';
 import FullPageLoader from './components/common/FullPageLoader';
 import { UserRole } from './types';
+import { testSupabaseConnection } from './lib/supabaseClient';
 
 // Centralized settings/profile and analytics pages
 import AdminAnalyticsPage from './pages/admin/AnalyticsPage';
@@ -119,6 +120,11 @@ const AppRoutes: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  useEffect(() => {
+    // Check Supabase connection on app mount
+    testSupabaseConnection();
+  }, []);
+  
   return (
     <ThemeProvider>
       <AuthProvider>
