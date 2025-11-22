@@ -160,7 +160,7 @@ const MapInstanceProvider: React.FC<{ setMap: (map: L.Map) => void, onMoveStart:
     return null;
 };
 
-const MapEventsHandler: React.FC<{ onMapClick: () => void }> = ({ onMapClick }) => {
+const MapEventsHandler: React.FC<{ onMapClick: (latlng: L.LatLng) => void }> = ({ onMapClick }) => {
     useMapEvents({
         click(e) {
             const target = e.originalEvent.target as HTMLElement;
@@ -172,7 +172,7 @@ const MapEventsHandler: React.FC<{ onMapClick: () => void }> = ({ onMapClick }) 
                 target.closest('.bottom-sheet-container')) {
                 return;
             }
-            onMapClick();
+            onMapClick(e.latlng);
         },
     });
     return null;
@@ -216,6 +216,7 @@ const MapPage: React.FC = () => {
     const [isSlotEditModalOpen, setIsSlotEditModalOpen] = useState(false);
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
     const [slotToEdit, setSlotToEdit] = useState<ParkingSlot | null>(null);
+    const [isAddMode, setIsAddMode] = useState(false);
 
     const searchContainerRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -243,6 +244,16 @@ const MapPage: React.FC = () => {
     const handleCloseInfoCard = useCallback(() => {
         setSelectedSlot(null);
     }, []);
+
+    const handleMapClick = useCallback((latlng: L.LatLng) => {
+        if (isAddMode) {
+            setSlotToEdit({ location: [latlng.lat, latlng.lng] } as any);
+            setIsSlotEditModalOpen(true);
+            setIsAddMode(false);
+        } else {
+            handleCloseInfoCard();
+        }
+    }, [isAddMode, handleCloseInfoCard]);
 
     const handleQuickReserve = (slot: ParkingSlot, durationHours: number) => {
         const now = new Date();
@@ -608,10 +619,19 @@ const MapPage: React.FC = () => {
                     </div>
                 )}
 
+                {isAddMode && (
+                    <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[1100] animate-bounce">
+                        <div className="bg-emerald-500 text-white px-4 py-2 rounded-full shadow-lg font-bold text-sm flex items-center gap-2">
+                            <MapPin size={16} />
+                            Click anywhere on map to add slot
+                        </div>
+                    </div>
+                )}
+
                 <MapContainer center={chittagongCoords} zoom={defaultZoom} maxZoom={18} className="h-full w-full focus:outline-none bg-slate-100 dark:bg-slate-900" zoomControl={false} zoomAnimation={true} markerZoomAnimation={true} scrollWheelZoom={true}>
                     <MapInstanceProvider setMap={setMap} onMoveStart={handleManualMapMove} />
                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' className="dark:brightness-75 dark:contrast-125 dark:grayscale-[0.5]" />
-                    <MapEventsHandler onMapClick={handleCloseInfoCard} />
+                    <MapEventsHandler onMapClick={handleMapClick} />
                     <ParkingMarkers slots={filteredSlots} onMarkerClick={handleMarkerClick} />
                     {userLocation && <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999}><Popup><div className="text-center font-sans"><p className="font-semibold text-blue-600">You are here</p><p className="text-xs text-slate-500 mt-1">Accurate to {accuracy?.toFixed(0)}m</p></div></Popup></Marker>}
                     {userLocation && accuracy && <Circle center={userLocation} radius={accuracy} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.15, weight: 1.5, dashArray: '5, 5', stroke: true }} />}
@@ -638,7 +658,16 @@ const MapPage: React.FC = () => {
                         />
                         {isSearching && <Loader2 className="absolute right-24 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" size={20} />}
                         {searchQuery && !isSearching && <button onClick={handleClearSearch} className="absolute right-20 top-1/2 -translate-y-1/2 text-slate-400 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><X size={16} /></button>}
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pl-2 border-l border-slate-200 dark:border-slate-700">
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pl-2 border-l border-slate-200 dark:border-slate-700 flex items-center gap-1">
+                            {isAdmin && (
+                                <button
+                                    onClick={() => setIsAddMode(!isAddMode)}
+                                    className={`p-2.5 rounded-xl transition-all ${isAddMode ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30 animate-pulse' : 'text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                                    title={isAddMode ? "Click on map to add slot" : "Enable add slot mode"}
+                                >
+                                    <Plus size={18} />
+                                </button>
+                            )}
                             <button onClick={() => setShowFilters(!showFilters)} className={`p-2.5 rounded-xl transition-all ${showFilters ? 'bg-primary text-white shadow-md shadow-primary/30' : 'text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}><SlidersHorizontal size={18} /></button>
                         </div>
                     </div>
