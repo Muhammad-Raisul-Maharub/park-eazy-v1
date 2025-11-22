@@ -26,7 +26,7 @@ const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      await login(email);
+      await login(email, password);
       navigate('/');
     } catch (err) {
       setError('Failed to log in. Please check your credentials.');
@@ -36,34 +36,37 @@ const LoginPage: React.FC = () => {
   };
 
   const handleGoogleLogin = async () => {
-    const googleEmail = window.prompt("To simulate Google Sign-In, please enter your email:");
-    if (googleEmail) {
-        setGoogleLoading(true);
-        setError('');
-        try {
-            await login(googleEmail);
-            navigate('/');
-        } catch (err) {
-            navigate('/signup');
-        } finally {
-            setGoogleLoading(false);
-        }
+    setGoogleLoading(true);
+    setError('');
+    try {
+      const { error } = await authContext.supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+
+      if (error) throw error;
+      // OAuth will redirect, so we don't need to navigate
+    } catch (err: any) {
+      setError(err?.message || 'Failed to sign in with Google');
+      setGoogleLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat relative"
-         style={{ backgroundImage: "url('https://images.unsplash.com/photo-1506521781263-d8422e82f27a?q=80&w=2670&auto=format&fit=crop')" }}>
-      
+      style={{ backgroundImage: "url('https://images.unsplash.com/photo-1506521781263-d8422e82f27a?q=80&w=2670&auto=format&fit=crop')" }}>
+
       {/* Dark Overlay with slight blue tint for depth */}
       <div className="absolute inset-0 bg-[#0f172a]/80 backdrop-blur-[4px]"></div>
 
       <div className="w-full max-w-[440px] bg-[#0f172a]/60 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 sm:p-10 shadow-2xl relative z-10 animate-fadeIn">
-        
+
         {/* Header Section */}
         <div className="flex flex-col items-center text-center space-y-6">
           <div className="bg-[#10b981]/10 p-4 rounded-2xl border border-[#10b981]/20 shadow-[0_0_30px_rgba(16,185,129,0.15)]">
-             <Car className="h-8 w-8 text-[#10b981]" />
+            <Car className="h-8 w-8 text-[#10b981]" />
           </div>
           <div className="space-y-1">
             <h1 className="text-3xl font-bold text-white tracking-tight">Park-Eazy</h1>
@@ -102,12 +105,12 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center px-4 text-slate-500 hover:text-[#10b981] transition-colors"
-                    tabIndex={-1}
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center px-4 text-slate-500 hover:text-[#10b981] transition-colors"
+                  tabIndex={-1}
                 >
-                    {showPassword ? <EyeOff className="h-5 w-5"/> : <Eye className="h-5 w-5"/>}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
@@ -115,7 +118,7 @@ const LoginPage: React.FC = () => {
 
           {error && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center font-medium animate-fadeIn">
-                {error}
+              {error}
             </div>
           )}
 
@@ -142,21 +145,21 @@ const LoginPage: React.FC = () => {
           </button>
 
           <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-700"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                  <span className="px-4 bg-[#0f172a]/40 text-slate-500 font-semibold tracking-wider backdrop-blur-sm">
-                     OR
-                  </span>
-              </div>
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-700"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="px-4 bg-[#0f172a]/40 text-slate-500 font-semibold tracking-wider backdrop-blur-sm">
+                OR
+              </span>
+            </div>
           </div>
 
           <div className="w-full">
-            <GoogleButton 
-                onClick={handleGoogleLogin} 
-                isLoading={googleLoading} 
-                className="!bg-[#1e293b] !border-slate-700 hover:!bg-[#334155] !text-white"
+            <GoogleButton
+              onClick={handleGoogleLogin}
+              isLoading={googleLoading}
+              className="!bg-[#1e293b] !border-slate-700 hover:!bg-[#334155] !text-white"
             >
               Sign in with Google
             </GoogleButton>

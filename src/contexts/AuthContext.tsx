@@ -7,7 +7,7 @@ import { Session } from '@supabase/supabase-js';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (updatedData: Partial<User>) => Promise<void>;
 }
@@ -81,25 +81,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Login function (Magic Link for simplicity in this demo, or Passwordless)
-  // For this specific codebase which simulates "login(email)", we will use 
-  // Supabase's signInWithOtp (Magic Link) or just simulate if in mock mode.
-  // However, the previous code was just "enter email -> logged in". 
-  // To keep it simple but "real", we'll use a hardcoded password for demo 
-  // OR just sign up anonymously if it's a demo.
-  // ACTUALLY: The user asked to "include authentication". 
-  // Let's implement a proper Magic Link login since we only take email.
-
-  const login = useCallback(async (email: string): Promise<void> => {
+  // Login function with password authentication
+  const login = useCallback(async (email: string, password: string): Promise<void> => {
     setLoading(true);
 
     // Check if we are in "Mock Mode" (no keys)
     if (!(import.meta as any).env.VITE_SUPABASE_URL) {
       console.warn("Supabase keys missing. Using mock login.");
-      // ... (Keep existing mock logic for fallback?)
-      // For now, let's throw an error to encourage setting up Supabase
-      // or just use the mock logic as a fallback.
-      // Let's keep the mock logic as a fallback for safety.
       const { mockUsers } = await import('../data/mockData');
       const lowercasedEmail = email.toLowerCase();
       let foundUser = mockUsers.find(u => u.email.toLowerCase() === lowercasedEmail);
@@ -116,12 +104,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     }
 
-    // Real Supabase Login (Magic Link)
-    const { error } = await supabase.auth.signInWithOtp({
+    // Real Supabase Login with Password
+    const { error } = await supabase.auth.signInWithPassword({
       email,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
+      password,
     });
 
     if (error) {
@@ -129,9 +115,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw error;
     }
 
-    // Note: In a real app, this would wait for the user to click the link.
-    // Since the UI expects an immediate login for the demo, we might need to alert the user.
-    alert(`Magic link sent to ${email}. Please check your inbox to log in.`);
     setLoading(false);
   }, []);
 
