@@ -32,7 +32,18 @@ const ConnectionTest: React.FC = () => {
 
         try {
             const startTime = Date.now();
-            const result = await testSupabaseConnection();
+
+            // Create a timeout promise
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Connection timed out (10s limit). Check your network or VPN.')), 10000)
+            );
+
+            // Race the test against the timeout
+            const result = await Promise.race([
+                testSupabaseConnection(),
+                timeoutPromise
+            ]);
+
             const duration = Date.now() - startTime;
 
             if (result) {
@@ -45,7 +56,7 @@ const ConnectionTest: React.FC = () => {
             }
         } catch (err: any) {
             setStatus('error');
-            setMessage('Test threw an exception');
+            setMessage('Test Failed');
             setDetails(err.message || String(err));
         }
     };
@@ -85,9 +96,9 @@ const ConnectionTest: React.FC = () => {
 
                     {/* Connection Status */}
                     <div className={`p-6 rounded-xl border flex flex-col items-center text-center gap-4 transition-all ${status === 'testing' ? 'bg-blue-500/10 border-blue-500/30' :
-                            status === 'success' ? 'bg-green-500/10 border-green-500/30' :
-                                status === 'error' ? 'bg-red-500/10 border-red-500/30' :
-                                    'bg-slate-800 border-slate-700'
+                        status === 'success' ? 'bg-green-500/10 border-green-500/30' :
+                            status === 'error' ? 'bg-red-500/10 border-red-500/30' :
+                                'bg-slate-800 border-slate-700'
                         }`}>
                         {status === 'testing' && <RefreshCw className="h-12 w-12 text-blue-400 animate-spin" />}
                         {status === 'success' && <CheckCircle className="h-12 w-12 text-green-400" />}
