@@ -50,14 +50,14 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
             id: lot.id,
             name: lot.name,
             location: [lot.latitude, lot.longitude] as [number, number],
-            address: lot.address,
+            address: lot.address || lot.name,
             status: lot.status as ParkingSlotStatus,
-            type: lot.vehicle_type as any,
-            pricePerHour: lot.price_per_hour,
+            type: (lot.vehicle_type || 'Car') as any, // Use vehicle_type column
+            pricePerHour: lot.price_per_hour || 0,
             features: lot.features || [],
-            operatingHours: lot.operating_hours,
-            rating: lot.rating,
-            reviews: lot.total_reviews,
+            operatingHours: lot.operating_hours || '24/7',
+            rating: lot.rating || 0,
+            reviews: lot.total_reviews || 0,
           }));
           setSlots(mapped);
         }
