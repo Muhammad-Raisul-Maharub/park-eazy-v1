@@ -85,25 +85,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = useCallback(async (email: string, password: string): Promise<void> => {
     setLoading(true);
 
-    // Check if we are in "Mock Mode" (no keys)
-    if (!(import.meta as any).env.VITE_SUPABASE_URL) {
-      console.warn("Supabase keys missing. Using mock login.");
-      const { mockUsers } = await import('../data/mockData');
-      const lowercasedEmail = email.toLowerCase();
-      let foundUser = mockUsers.find(u => u.email.toLowerCase() === lowercasedEmail);
-      if (!foundUser) {
-        // Demo logic
-        if (lowercasedEmail.startsWith('user')) foundUser = mockUsers.find(u => u.role === UserRole.USER);
-        else if (lowercasedEmail.startsWith('admin')) foundUser = mockUsers.find(u => u.role === UserRole.ADMIN);
-        else if (lowercasedEmail.startsWith('superadmin')) foundUser = mockUsers.find(u => u.role === UserRole.SUPER_ADMIN);
-      }
-      if (foundUser) {
-        setUser({ ...foundUser, email });
-        setLoading(false);
-        return;
-      }
-    }
-
     // Real Supabase Login with Password
     const { error } = await supabase.auth.signInWithPassword({
       email,

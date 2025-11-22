@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode, useContext, useMemo, useCallback } from 'react';
 import { ParkingSlot, Reservation, ParkingSlotStatus, PaymentMethod, ReservationStatus } from '../types';
-import { mockParkingSlots, mockReservations } from '../data/mockData';
 import { AuthContext } from './AuthContext';
 import { supabase } from '../lib/supabaseClient';
 
@@ -40,8 +39,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
 
         if (lotsError) {
           console.error('Error fetching parking lots:', lotsError);
-          // Fallback to mock data
-          setSlots(mockParkingSlots);
+          setSlots([]); // Empty state on error
         } else if (lotsData) {
           // Map Supabase data to ParkingSlot format
           const mapped: ParkingSlot[] = lotsData.map(lot => ({
@@ -67,8 +65,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
 
         if (resError) {
           console.error('Error fetching reservations:', resError);
-          // Fallback to mock data
-          setReservations(mockReservations);
+          setReservations([]); // Empty state on error
         } else if (resData) {
           // Map Supabase data to Reservation format
           const mappedRes: Reservation[] = resData.map(res => ({
@@ -85,9 +82,9 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
         }
       } catch (error) {
         console.error('Unexpected error fetching data:', error);
-        // Fallback to mock data
-        setSlots(mockParkingSlots);
-        setReservations(mockReservations);
+        // Set empty state on error
+        setSlots([]);
+        setReservations([]);
       } finally {
         setLoading(false);
       }

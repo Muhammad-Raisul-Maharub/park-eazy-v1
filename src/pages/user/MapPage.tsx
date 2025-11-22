@@ -11,7 +11,6 @@ import { Search, LocateFixed, Car, SlidersHorizontal, Loader2, MapPin, X, Bike, 
 import Button from '../../components/common/Button';
 import { getVehicleMarkerIcon, getHighlightIcon, searchedLocationIcon, userLocationIcon } from '../../utils/mapHelpers';
 import { geocodeWithRateLimit } from '../../utils/geocoding';
-import { mockLocations } from '../../data/mockData';
 import { formatDistance } from '../../utils/formatters';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getUserParkingHistory, UserParkingHistory, getGeneralTip } from '../../utils/recommendations';
@@ -442,12 +441,7 @@ const MapPage: React.FC = () => {
                 } catch (error) {
                     console.warn('Geocoding error (falling back to mock):', error);
                     setGeocodingError(true);
-                    geocodedSuggestions = mockLocations
-                        .filter(loc => loc.name.toLowerCase().includes(queryLower) || loc.category.toLowerCase().includes(queryLower))
-                        .map(loc => ({
-                            type: 'location' as const,
-                            data: { name: loc.name, location: loc.location, },
-                        }));
+                    geocodedSuggestions = []; // If geocoding fails, no location suggestions
                 }
 
                 const combined: SearchSuggestion[] = [...slotSuggestions, ...geocodedSuggestions, ...featureSuggestions];

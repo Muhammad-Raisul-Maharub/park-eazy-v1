@@ -1,7 +1,6 @@
 
 import React, { createContext, useState, ReactNode, useCallback } from 'react';
-import { User, UserRole } from '../types';
-import { mockUsers } from '../data/mockData';
+import { User } from '../types';
 
 interface UserContextType {
     users: User[];
@@ -13,7 +12,8 @@ interface UserContextType {
 export const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [users, setUsers] = useState<User[]>(mockUsers);
+    // Initialize with empty array - users fetched from Supabase via AuthContext
+    const [users, setUsers] = useState<User[]>([]);
 
     const addUser = useCallback((user: User) => {
         setUsers(prev => [...prev, user]);

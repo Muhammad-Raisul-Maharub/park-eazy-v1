@@ -1,7 +1,6 @@
 
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { SystemLog } from '../types';
-import { mockSystemLogs } from '../data/mockData';
 import { AuthContext } from './AuthContext';
 
 interface LogContextType {
@@ -12,12 +11,13 @@ interface LogContextType {
 export const LogContext = createContext<LogContextType | undefined>(undefined);
 
 export const LogProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [logs, setLogs] = useState<SystemLog[]>(mockSystemLogs);
+  // Initialize with empty array - logs will be created as actions occur
+  const [logs, setLogs] = useState<SystemLog[]>([]);
   const authContext = useContext(AuthContext);
 
   const addLog = useCallback((action: string, details: string) => {
     const currentUser = authContext?.user;
-    
+
     const newLog: SystemLog = {
       id: `log-${Date.now()}`,
       timestamp: new Date(),
