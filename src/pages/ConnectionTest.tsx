@@ -80,24 +80,4 @@ const ConnectionTest: React.FC = () => {
                             </div>
                         </div>
 
-                        {details && (
-                            <div className="bg-red-950/30 p-4 rounded-lg border border-red-900/50 text-red-200 text-sm font-mono break-words">
-                                {details}
-                            </div>
-                        )}
-
-                        <button
-                            onClick={runTest}
-                            disabled={status === 'testing'}
-                            className="w-full py-3 bg-[#10b981] hover:bg-[#059669] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
-                        >
-                            <RefreshCw className={`h-5 w-5 ${status === 'testing' ? 'animate-spin' : ''}`} />
-                            Run Test Again
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    export default ConnectionTest;
+                        export default ConnectionTest;
