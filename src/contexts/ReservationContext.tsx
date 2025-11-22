@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, ReactNode, useContext, useMe
 import { ParkingSlot, Reservation, ParkingSlotStatus, PaymentMethod, ReservationStatus } from '../types';
 import { mockParkingSlots, mockReservations } from '../data/mockData';
 import { AuthContext } from './AuthContext';
+import { supabase } from '../lib/supabaseClient';
 
 interface ReservationContextType {
   slots: ParkingSlot[];
@@ -23,36 +24,93 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [slots, setSlots] = useState<ParkingSlot[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const authContext = useContext(AuthContext);
   if (!authContext) {
-      throw new Error("ReservationContext must be used within an AuthProvider");
+    throw new Error("ReservationContext must be used within an AuthProvider");
   }
   const { user } = authContext;
 
   useEffect(() => {
-    // Simulate fetching initial data
-    setLoading(true);
-    setTimeout(() => {
-      setSlots(mockParkingSlots);
-      setReservations(mockReservations);
-      setLoading(false);
-    }, 500);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch parking lots from Supabase
+        const { data: lotsData, error: lotsError } = await supabase
+          .from('parking_lots')
+          .select('*');
+
+        if (lotsError) {
+          console.error('Error fetching parking lots:', lotsError);
+          // Fallback to mock data
+          setSlots(mockParkingSlots);
+        } else if (lotsData) {
+          // Map Supabase data to ParkingSlot format
+          const mapped: ParkingSlot[] = lotsData.map(lot => ({
+            id: lot.id,
+            name: lot.name,
+            location: [lot.latitude, lot.longitude] as [number, number],
+            address: lot.address,
+            status: lot.status as ParkingSlotStatus,
+            type: lot.vehicle_type as any,
+            pricePerHour: lot.price_per_hour,
+            features: lot.features || [],
+            operatingHours: lot.operating_hours,
+            rating: lot.rating,
+            reviews: lot.total_reviews,
+          }));
+          setSlots(mapped);
+        }
+
+        // Fetch reservations from Supabase
+        const { data: resData, error: resError } = await supabase
+          .from('reservations')
+          .select('*');
+
+        if (resError) {
+          console.error('Error fetching reservations:', resError);
+          // Fallback to mock data
+          setReservations(mockReservations);
+        } else if (resData) {
+          // Map Supabase data to Reservation format
+          const mappedRes: Reservation[] = resData.map(res => ({
+            id: res.id,
+            userId: res.user_id,
+            slotId: res.parking_lot_id,
+            startTime: new Date(res.start_time),
+            endTime: new Date(res.end_time),
+            totalCost: parseFloat(res.total_cost),
+            status: res.status as ReservationStatus,
+            paymentMethod: res.payment_method as PaymentMethod,
+          }));
+          setReservations(mappedRes);
+        }
+      } catch (error) {
+        console.error('Unexpected error fetching data:', error);
+        // Fallback to mock data
+        setSlots(mockParkingSlots);
+        setReservations(mockReservations);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
-  
+
   const getReservationsForCurrentUser = useCallback((): Reservation[] => {
-    if(!user) return [];
-    return reservations.filter(r => r.userId === user.id).sort((a,b) => b.startTime.getTime() - a.startTime.getTime());
+    if (!user) return [];
+    return reservations.filter(r => r.userId === user.id).sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
   }, [user, reservations]);
 
   const getActiveReservationForCurrentUser = useCallback((): Reservation | undefined => {
-    if(!user) return undefined;
+    if (!user) return undefined;
     const now = new Date();
     return reservations.find(r => r.userId === user.id && r.status === ReservationStatus.ACTIVE && r.endTime > now);
   }, [user, reservations]);
-  
+
   const addReservation = useCallback(async (slot: ParkingSlot, startTime: Date, endTime: Date, paymentMethod: PaymentMethod): Promise<Reservation> => {
-     if(!user) throw new Error("User not logged in");
+    if (!user) throw new Error("User not logged in");
 
     // Simulate API call
     await new Promise(res => setTimeout(res, 500));
@@ -62,7 +120,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     if (durationHours <= 0) {
       throw new Error("Invalid reservation duration.");
     }
-    
+
     const newReservation: Reservation = {
       id: `res-${Date.now()}`,
       userId: user.id,
@@ -75,10 +133,10 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     setReservations(prev => [...prev, newReservation]);
-    setSlots(prevSlots => prevSlots.map(s => 
+    setSlots(prevSlots => prevSlots.map(s =>
       s.id === slot.id ? { ...s, status: ParkingSlotStatus.RESERVED } : s
     ));
-    
+
     return newReservation;
   }, [user]);
 
@@ -89,12 +147,12 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
 
     const reservation = reservations.find(r => r.id === reservationId);
     if (!reservation) {
-        throw new Error("Reservation not found");
+      throw new Error("Reservation not found");
     }
 
     const slot = slots.find(s => s.id === reservation.slotId);
     if (!slot) {
-        throw new Error("Associated slot not found");
+      throw new Error("Associated slot not found");
     }
 
     // Simulate API call
@@ -142,42 +200,42 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   // CRUD for Slots
   const addSlot = useCallback((slot: ParkingSlot) => {
-      setSlots(prev => [...prev, slot]);
+    setSlots(prev => [...prev, slot]);
   }, []);
 
   const updateSlot = useCallback((slot: ParkingSlot) => {
-      setSlots(prev => prev.map(s => s.id === slot.id ? slot : s));
+    setSlots(prev => prev.map(s => s.id === slot.id ? slot : s));
   }, []);
 
   const deleteSlot = useCallback((id: string) => {
-      setSlots(prev => prev.filter(s => s.id !== id));
+    setSlots(prev => prev.filter(s => s.id !== id));
   }, []);
 
 
-  const value = useMemo(() => ({ 
-      slots, 
-      reservations, 
-      loading, 
-      addReservation, 
-      getReservationsForCurrentUser, 
-      getActiveReservationForCurrentUser, 
-      extendReservation, 
-      endReservation,
-      addSlot,
-      updateSlot,
-      deleteSlot
+  const value = useMemo(() => ({
+    slots,
+    reservations,
+    loading,
+    addReservation,
+    getReservationsForCurrentUser,
+    getActiveReservationForCurrentUser,
+    extendReservation,
+    endReservation,
+    addSlot,
+    updateSlot,
+    deleteSlot
   }), [
-      slots, 
-      reservations, 
-      loading, 
-      addReservation, 
-      getReservationsForCurrentUser, 
-      getActiveReservationForCurrentUser, 
-      extendReservation, 
-      endReservation,
-      addSlot,
-      updateSlot,
-      deleteSlot
+    slots,
+    reservations,
+    loading,
+    addReservation,
+    getReservationsForCurrentUser,
+    getActiveReservationForCurrentUser,
+    extendReservation,
+    endReservation,
+    addSlot,
+    updateSlot,
+    deleteSlot
   ]);
 
 
