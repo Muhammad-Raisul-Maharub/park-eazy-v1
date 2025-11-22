@@ -10,6 +10,7 @@ import { UserProvider } from './contexts/UserContext';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ConnectionTest from './pages/ConnectionTest';
 import UserLayout from './components/layout/UserLayout';
 import AdminLayout from './components/layout/AdminLayout';
 import SuperAdminLayout from './components/layout/SuperAdminLayout';
@@ -58,7 +59,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="*" element={<Navigate to="/login" />} />
+        <Route path="/connection-test" element={<ConnectionTest />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
   }
@@ -75,7 +77,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/reservation-confirmation" element={<ReservationConfirmationPage />} />
           <Route path="/payment" element={<PaymentPage />} />
           <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </UserLayout>
     );
@@ -91,7 +93,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/manage-reservations" element={<ManageReservationsPage />} />
           <Route path="/analytics" element={<AdminAnalyticsPage />} />
           <Route path="/profile" element={<AdminProfilePage />} />
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AdminLayout>
     );
@@ -110,13 +112,13 @@ const AppRoutes: React.FC = () => {
           <Route path="/currency" element={<CurrencyManagerPage />} />
           <Route path="/logs" element={<SystemLogsPage />} />
           <Route path="/profile" element={<SuperAdminProfilePage />} />
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </SuperAdminLayout>
     );
   }
 
-  return <Navigate to="/login" />;
+  return <Navigate to="/login" replace />;
 };
 
 const App: React.FC = () => {

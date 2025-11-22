@@ -29,8 +29,10 @@ const LoginPage: React.FC = () => {
     try {
       await login(email, password);
       navigate('/');
-    } catch (err) {
-      setError('Failed to log in. Please check your credentials.');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      // Show actual error message if available, otherwise generic
+      setError(err.message || 'Failed to log in. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -167,11 +169,16 @@ const LoginPage: React.FC = () => {
           </div>
 
           <p className="text-center text-sm text-slate-400 pt-2">
-            Don't have an account?{' '}
             <Link to="/signup" className="font-bold text-[#10b981] hover:text-[#34d399] transition-colors">
               Sign Up
             </Link>
           </p>
+
+          <div className="text-center pt-4">
+            <Link to="/connection-test" className="text-xs text-slate-500 hover:text-slate-300 underline">
+              Trouble connecting? Test Network
+            </Link>
+          </div>
         </form>
       </div>
     </div>
