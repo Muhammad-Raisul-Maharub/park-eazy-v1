@@ -51,18 +51,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        fetchUserProfile(session.user.id, session.user.email!).then(profile => {
+    // Add timeout to prevent infinite loading
+    const initAuth = async () => {
+      try {
+        // Race between auth check and 10s timeout
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
+        );
+
+        const sessionPromise = supabase.auth.getSession();
+
+        const { data: { session } } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
+
+        setSession(session);
+        if (session?.user) {
+          const profile = await fetchUserProfile(session.user.id, session.user.email!);
           setUser(profile);
-          setLoading(false);
-        });
-      } else {
+        }
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        // Don't block app load on auth failure
+      } finally {
+        // ALWAYS stop loading, even on error
         setLoading(false);
       }
-    });
+    };
+
+    initAuth();
 
     // Listen for auth changes
     const {
@@ -75,7 +93,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         setUser(null);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

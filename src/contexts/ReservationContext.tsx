@@ -29,13 +29,19 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
   const user = authContext?.user || null;
 
   useEffect(() => {
+    const fetchWithTimeout = async (promise: Promise<any>, timeoutMs = 8000) => {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Database query timeout')), timeoutMs)
+      );
+      return Promise.race([promise, timeoutPromise]);
+    };
+
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch parking lots from Supabase
-        const { data: lotsData, error: lotsError } = await supabase
-          .from('parking_lots')
-          .select('*');
+        // Fetch parking lots from Supabase with timeout
+        const lotsPromise = supabase.from('parking_lots').select('*');
+        const { data: lotsData, error: lotsError } = await fetchWithTimeout(lotsPromise) as any;
 
         if (lotsError) {
           console.error('Error fetching parking lots:', lotsError);
@@ -48,7 +54,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
             location: [lot.latitude, lot.longitude] as [number, number],
             address: lot.address || lot.name,
             status: lot.status as ParkingSlotStatus,
-            type: (lot.vehicle_type || 'Car') as any, // Use vehicle_type column
+            type: (lot.vehicle_type || 'Car') as any,
             pricePerHour: lot.price_per_hour || 0,
             features: lot.features || [],
             operatingHours: lot.operating_hours || '24/7',
@@ -58,10 +64,9 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
           setSlots(mapped);
         }
 
-        // Fetch reservations from Supabase
-        const { data: resData, error: resError } = await supabase
-          .from('reservations')
-          .select('*');
+        // Fetch reservations from Supabase with timeout
+        const resPromise = supabase.from('reservations').select('*');
+        const { data: resData, error: resError } = await fetchWithTimeout(resPromise) as any;
 
         if (resError) {
           console.error('Error fetching reservations:', resError);
@@ -86,6 +91,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
         setSlots([]);
         setReservations([]);
       } finally {
+        // ALWAYS stop loading, even on timeout/error
         setLoading(false);
       }
     };
