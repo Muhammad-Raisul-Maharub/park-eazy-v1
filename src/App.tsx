@@ -89,7 +89,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/map" element={<MapPage />} />
           <Route path="/manage-parkings" element={<ManageParkingsPage />} />
           <Route path="/manage-reservations" element={<ManageReservationsPage />} />
-           <Route path="/analytics" element={<AdminAnalyticsPage />} />
+          <Route path="/analytics" element={<AdminAnalyticsPage />} />
           <Route path="/profile" element={<AdminProfilePage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
@@ -109,7 +109,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/analytics" element={<SuperAdminAnalyticsPage />} />
           <Route path="/currency" element={<CurrencyManagerPage />} />
           <Route path="/logs" element={<SystemLogsPage />} />
-           <Route path="/profile" element={<SuperAdminProfilePage />} />
+          <Route path="/profile" element={<SuperAdminProfilePage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </SuperAdminLayout>
@@ -121,10 +121,10 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   useEffect(() => {
-    // Check Supabase connection on app mount
-    testSupabaseConnection();
+    // Check Supabase connection on app mount (non-blocking)
+    testSupabaseConnection().catch(err => console.error('Supabase test failed:', err));
   }, []);
-  
+
   return (
     <ThemeProvider>
       <AuthProvider>
