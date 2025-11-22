@@ -524,9 +524,11 @@ const MapPage: React.FC = () => {
         if (item.type === 'location') {
             queryText = item.data.name;
             const latlng = L.latLng(item.data.location[0], item.data.location[1]);
-            // Use setView for instant movement or flyTo with shorter duration
-            map?.flyTo(latlng, 16, { animate: true, duration: 1.5 });
             setSearchedLocation(latlng);
+            // Ensure zoom happens after marker is set
+            setTimeout(() => {
+                map?.flyTo(latlng, 17, { animate: true, duration: 1.2 });
+            }, 100);
         } else if (item.type === 'slot') {
             queryText = item.data.name;
             if (!filteredSlots.find(s => s.id === (item.data as ParkingSlot).id)) {
@@ -598,7 +600,26 @@ const MapPage: React.FC = () => {
     const handleEditSlot = (slot: ParkingSlot) => { setSlotToEdit(slot); setIsSlotEditModalOpen(true); };
     const handleDeleteSlotClick = (slot: ParkingSlot) => { setSlotToEdit(slot); setIsConfirmDeleteOpen(true); };
     const confirmDeleteSlot = () => { if (slotToEdit) { deleteSlot(slotToEdit.id); logContext?.addLog('SLOT_DELETED', `Deleted parking slot ${slotToEdit.name}`); setSelectedSlot(null); setSlotToEdit(null); } setIsConfirmDeleteOpen(false); };
-    const handleSaveSlot = (slot: ParkingSlot) => { const isUpdate = slots.some(s => s.id === slot.id); if (isUpdate) { updateSlot(slot); logContext?.addLog('SLOT_UPDATE', `Updated parking slot ${slot.name}`); } else { addSlot(slot); logContext?.addLog('SLOT_CREATED', `Created new parking slot ${slot.name}`); } setIsSlotEditModalOpen(false); setSlotToEdit(null); if (selectedSlot && selectedSlot.id === slot.id) { setSelectedSlot(slot); } };
+    const handleSaveSlot = async (slot: ParkingSlot) => {
+        try {
+            const isUpdate = slots.some(s => s.id === slot.id);
+            if (isUpdate) {
+                await updateSlot(slot);
+                logContext?.addLog('SLOT_UPDATE', `Updated parking slot ${slot.name}`);
+            } else {
+                await addSlot(slot);
+                logContext?.addLog('SLOT_CREATED', `Created new parking slot ${slot.name}`);
+            }
+            setIsSlotEditModalOpen(false);
+            setSlotToEdit(null);
+            if (selectedSlot && selectedSlot.id === slot.id) {
+                setSelectedSlot(slot);
+            }
+        } catch (error) {
+            console.error('Failed to save parking slot:', error);
+            alert('Failed to save parking slot. Please check your permissions and try again.');
+        }
+    };
 
     if (loading) return <FullPageLoader />;
 
@@ -634,10 +655,8 @@ const MapPage: React.FC = () => {
                     <MapEventsHandler onMapClick={handleMapClick} />
                     <ParkingMarkers slots={filteredSlots} onMarkerClick={handleMarkerClick} />
                     {userLocation && <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999}><Popup><div className="text-center font-sans"><p className="font-semibold text-blue-600">You are here</p><p className="text-xs text-slate-500 mt-1">Accurate to {accuracy?.toFixed(0)}m</p></div></Popup></Marker>}
-                    {userLocation && accuracy && <Circle center={userLocation} radius={accuracy} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.15, weight: 1.5, dashArray: '5, 5', stroke: true }} />}
+                    {userLocation && accuracy && <Circle center={userLocation} radius={Math.min(accuracy, 100)} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.15, weight: 1.5, dashArray: '5, 5', stroke: true }} />}
                     {searchedLocation && <Marker key={`search-${searchedLocation.lat}-${searchedLocation.lng}`} position={searchedLocation} icon={searchedLocationIcon()}><Popup>Searched Location</Popup></Marker>}
-                    {/* Debug Marker - Standard Leaflet Icon to verify map layer */}
-                    <Marker position={chittagongCoords}><Popup>Map Center (Debug)</Popup></Marker>
                     {selectedSlot && <Marker position={selectedSlot.location} icon={getHighlightIcon(selectedSlot)} zIndexOffset={1000} />}
                 </MapContainer>
 

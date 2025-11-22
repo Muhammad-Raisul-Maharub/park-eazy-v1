@@ -53,7 +53,6 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
             name: lot.name,
             location: [lot.latitude, lot.longitude] as [number, number],
             address: lot.address || lot.name,
-            address: lot.address || lot.name,
             status: (Object.values(ParkingSlotStatus).includes(lot.status as ParkingSlotStatus) ? lot.status : ParkingSlotStatus.AVAILABLE) as ParkingSlotStatus,
             type: (lot.vehicle_type || 'Car') as any,
             pricePerHour: lot.price_per_hour || 0,
@@ -201,16 +200,89 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
   }, [reservations]);
 
   // CRUD for Slots
-  const addSlot = useCallback((slot: ParkingSlot) => {
-    setSlots(prev => [...prev, slot]);
+  const addSlot = useCallback(async (slot: ParkingSlot) => {
+    try {
+      // Insert into database
+      const { error } = await supabase.from('parking_lots').insert({
+        id: slot.id,
+        name: slot.name,
+        latitude: slot.location[0],
+        longitude: slot.location[1],
+        address: slot.address,
+        status: slot.status,
+        vehicle_type: slot.type,
+        price_per_hour: slot.pricePerHour,
+        features: slot.features || [],
+        operating_hours: slot.operatingHours || '24/7',
+        rating: slot.rating || 0,
+        total_reviews: slot.reviews || 0,
+      });
+
+      if (error) {
+        console.error('Error adding parking slot:', error);
+        throw error;
+      }
+
+      // Update local state
+      setSlots(prev => [...prev, slot]);
+    } catch (error) {
+      console.error('Failed to add parking slot:', error);
+      throw error;
+    }
   }, []);
 
-  const updateSlot = useCallback((slot: ParkingSlot) => {
-    setSlots(prev => prev.map(s => s.id === slot.id ? slot : s));
+  const updateSlot = useCallback(async (slot: ParkingSlot) => {
+    try {
+      // Update in database
+      const { error } = await supabase
+        .from('parking_lots')
+        .update({
+          name: slot.name,
+          latitude: slot.location[0],
+          longitude: slot.location[1],
+          address: slot.address,
+          status: slot.status,
+          vehicle_type: slot.type,
+          price_per_hour: slot.pricePerHour,
+          features: slot.features || [],
+          operating_hours: slot.operatingHours || '24/7',
+          rating: slot.rating || 0,
+          total_reviews: slot.reviews || 0,
+        })
+        .eq('id', slot.id);
+
+      if (error) {
+        console.error('Error updating parking slot:', error);
+        throw error;
+      }
+
+      // Update local state
+      setSlots(prev => prev.map(s => s.id === slot.id ? slot : s));
+    } catch (error) {
+      console.error('Failed to update parking slot:', error);
+      throw error;
+    }
   }, []);
 
-  const deleteSlot = useCallback((id: string) => {
-    setSlots(prev => prev.filter(s => s.id !== id));
+  const deleteSlot = useCallback(async (id: string) => {
+    try {
+      // Delete from database
+      const { error } = await supabase
+        .from('parking_lots')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting parking slot:', error);
+        throw error;
+      }
+
+      // Update local state
+      setSlots(prev => prev.filter(s => s.id !== id));
+    } catch (error) {
+      console.error('Failed to delete parking slot:', error);
+      throw error;
+    }
   }, []);
 
 
