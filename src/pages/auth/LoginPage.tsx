@@ -2,6 +2,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
 import { Car, Eye, EyeOff } from 'lucide-react';
 import GoogleButton from '../../components/common/GoogleButton';
 
@@ -39,7 +40,7 @@ const LoginPage: React.FC = () => {
     setGoogleLoading(true);
     setError('');
     try {
-      const { error } = await authContext.supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
