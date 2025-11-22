@@ -5,5 +5,5 @@ import L from 'leaflet';
 if (typeof window !== 'undefined') {
     // @ts-ignore
     window.L = L;
-    console.log('✅ Leaflet exposed to window.L');
+
 }
