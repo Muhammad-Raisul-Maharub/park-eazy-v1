@@ -98,42 +98,62 @@ create policy "Users can update own reservations." on public.reservations for up
 create policy "Users can view own payment methods." on public.saved_payment_methods for select using (auth.uid() = user_id);
 create policy "Users can manage own payment methods." on public.saved_payment_methods for all using (auth.uid() = user_id);
 
+-- System Logs
+create policy "Users can view own logs." on public.system_logs for select using (auth.uid() = user_id);
+create policy "Admins can view all logs." on public.system_logs for select using (exists (select 1 from public.users where id = auth.uid() and role in ('admin', 'super_admin')));
+
 -- ==========================================
--- 3. MOCK DATA
+-- 3. TRIGGERS & FUNCTIONS
 -- ==========================================
 
--- Mock Parking Slots (Dhaka Locations)
+-- Function to handle new user signup
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.users (id, email, name, role)
+  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'name', 'New User'), 'user');
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Trigger to call the function on auth.users insert
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- ==========================================
+-- 4. MOCK DATA
+-- ==========================================
+
+-- Mock Parking Slots (Chittagong, Dhaka, Sylhet)
 INSERT INTO public.parking_slots (name, latitude, longitude, address, status, type, price_per_hour, features, operating_hours, rating, reviews)
 VALUES
-('Gulshan Pink City Basement', 23.7925, 90.4078, 'Gulshan 2, Dhaka', 'Available', 'Car', 50.0, ARRAY['CCTV', 'Guard', 'Indoor', 'Lighting'], '8:00 AM - 10:00 PM', 4.5, 12),
-('Dhanmondi Lake Side Parking', 23.7461, 90.3742, 'Road 8A, Dhanmondi, Dhaka', 'Occupied', 'Car', 30.0, ARRAY['Open Air', 'Guard'], '24/7', 4.2, 8),
-('Bashundhara City Basement 2', 23.7509, 90.3935, 'Panthapath, Dhaka', 'Available', 'Car', 60.0, ARRAY['CCTV', 'Guard', 'Indoor', 'Elevator Access'], '9:00 AM - 9:00 PM', 4.7, 25),
-('Uttara Sector 4 Park', 23.8630, 90.3978, 'Sector 4, Uttara, Dhaka', 'Available', 'Bike', 15.0, ARRAY['Open Air', 'Guard'], '6:00 AM - 11:00 PM', 4.0, 5),
-('Banani Super Market', 23.7937, 90.4043, 'Banani, Dhaka', 'Reserved', 'SUV', 70.0, ARRAY['CCTV', 'Guard', 'Indoor'], '8:00 AM - 10:00 PM', 4.3, 10),
-('Motijheel City Centre', 23.7315, 90.4165, 'Motijheel, Dhaka', 'Available', 'Car', 80.0, ARRAY['CCTV', 'Guard', 'Indoor', 'Valet'], '24/7', 4.8, 30),
-('Mirpur 10 Circle Parking', 23.8070, 90.3685, 'Mirpur 10, Dhaka', 'Available', 'Bike', 10.0, ARRAY['Open Air'], '7:00 AM - 10:00 PM', 3.8, 15),
-('Jamuna Future Park Level -2', 23.8136, 90.4243, 'Bashundhara R/A, Dhaka', 'Available', 'Car', 50.0, ARRAY['CCTV', 'Guard', 'Indoor', 'Spacious'], '9:00 AM - 10:00 PM', 4.6, 40),
-('Lalmatia Aarong Parking', 23.7566, 90.3713, 'Lalmatia, Dhaka', 'Occupied', 'Car', 40.0, ARRAY['Guard', 'Indoor'], '10:00 AM - 8:00 PM', 4.4, 18),
-('Bailey Road Officer''s Club', 23.7405, 90.4090, 'Bailey Road, Dhaka', 'Reserved', 'Car', 45.0, ARRAY['CCTV', 'Guard', 'Open Air'], '24/7', 4.5, 22),
-('USTC University Parking', 22.3615, 91.7973, 'Foy''s Lake Rd, Chattogram', 'Available', 'Car', 20.0, ARRAY['Open Air', 'Guard'], '7:00 AM - 8:00 PM', 4.1, 15),
-('Agrabad Commercial Area', 22.3237, 91.8091, 'Agrabad, Chattogram', 'Occupied', 'Car', 40.0, ARRAY['CCTV', 'Guard', 'Indoor'], '8:00 AM - 10:00 PM', 4.4, 35),
-('Khulshi Residential Parking', 22.3609, 91.8111, 'Khulshi, Chattogram', 'Available', 'SUV', 35.0, ARRAY['CCTV', 'Guard', 'Lighting'], '24/7', 4.6, 12),
-('Halishahar Block B', 22.3181, 91.7782, 'Halishahar, Chattogram', 'Available', 'Bike', 10.0, ARRAY['Open Air'], '6:00 AM - 11:00 PM', 3.9, 8),
-('Panchlaish Residential Area', 22.3667, 91.8250, 'Panchlaish, Chattogram', 'Reserved', 'Car', 30.0, ARRAY['Guard', 'CCTV'], '24/7', 4.3, 20),
-('Chandgoan Residential Area', 22.3785, 91.8476, 'Chandgoan, Chattogram', 'Available', 'Car', 25.0, ARRAY['Guard', 'Open Air'], '7:00 AM - 11:00 PM', 4.0, 10),
-('Lalkhan Bazar Circle', 22.3519, 91.8208, 'Lalkhan Bazar, Chattogram', 'Occupied', 'Bike', 15.0, ARRAY['CCTV', 'Guard'], '8:00 AM - 10:00 PM', 4.2, 25),
-('Jamal Khan Road', 22.3501, 91.8273, 'Jamal Khan, Chattogram', 'Available', 'Car', 35.0, ARRAY['CCTV', 'Guard', 'Indoor'], '9:00 AM - 9:00 PM', 4.5, 30),
-('Sholoshahar Gate 2', 22.3668, 91.8258, 'Sholoshahar, Chattogram', 'Available', 'Car', 30.0, ARRAY['Open Air', 'Guard'], '24/7', 4.1, 18),
-('Nasirabad Industrial Area', 22.3608, 91.8232, 'Nasirabad, Chattogram', 'Reserved', 'Truck', 60.0, ARRAY['CCTV', 'Guard', 'Large Spaces'], '24/7', 4.0, 5),
-('Chawkbazar Intersection', 22.3526, 91.8329, 'Chawkbazar, Chattogram', 'Occupied', 'Bike', 12.0, ARRAY['Open Air'], '8:00 AM - 10:00 PM', 3.8, 22),
-('Dampara Bus Stop', 22.3526, 91.8192, 'Dampara, Chattogram', 'Available', 'Car', 40.0, ARRAY['CCTV', 'Guard'], '24/7', 4.3, 28),
-('Foy''s Lake Amusement Park', 22.3724, 91.7928, 'Foy''s Lake, Chattogram', 'Available', 'Car', 50.0, ARRAY['CCTV', 'Guard', 'Large Spaces'], '9:00 AM - 8:00 PM', 4.7, 45),
-('Ethnological Museum Parking', 22.3280, 91.8150, 'Agrabad, Chattogram', 'Available', 'Car', 30.0, ARRAY['Guard', 'Indoor'], '10:00 AM - 6:00 PM', 4.4, 14),
-('Chandanpura Mosque Area', 22.3501, 91.8362, 'Chandanpura, Chattogram', 'Available', 'Bike', 10.0, ARRAY['Open Air'], '5:00 AM - 10:00 PM', 4.2, 16),
-('Zia Memorial Museum', 22.3482, 91.8239, 'Kazir Dewri, Chattogram', 'Reserved', 'Car', 35.0, ARRAY['CCTV', 'Guard'], '9:00 AM - 5:00 PM', 4.3, 11),
-('Agrabad Mohila College', 22.3252, 91.7976, 'Agrabad, Chattogram', 'Available', 'Car', 25.0, ARRAY['Guard'], '8:00 AM - 4:00 PM', 4.0, 9),
-('Bhatiary Lake View', 22.4343, 91.7638, 'Bhatiary, Chattogram', 'Available', 'SUV', 45.0, ARRAY['Open Air', 'Scenic View'], '6:00 AM - 7:00 PM', 4.8, 32),
-('Khaiyachara Falls Parking', 22.7694, 91.6119, 'Mirsharai, Chattogram', 'Available', 'Car', 40.0, ARRAY['Open Air', 'Guard'], '7:00 AM - 6:00 PM', 4.5, 20);
+  -- Chittagong
+  ('GEC-01', 22.359, 91.821, 'Near GEC Convention Hall, Chittagong', 'Available', 'Car', 50, ARRAY['CCTV', 'Guarded'], '24/7', 4.8, 35),
+  ('GEC-02', 22.357, 91.822, 'Central Plaza, GEC Circle, Chittagong', 'Occupied', 'SUV', 70, ARRAY['Multi-storey parking', 'Valet parking'], '9 AM - 11 PM', 4.5, 20),
+  ('AGB-01', 22.333, 91.815, 'Agrabad Access Road, Chittagong', 'Reserved', 'Bike', 20, ARRAY['Guarded'], '24/7', 4.2, 15),
+  ('AGB-02', 22.335, 91.817, 'Badamtali, Agrabad, Chittagong', 'Available', 'Truck', 100, ARRAY['Guarded', 'CCTV'], '24/7', 4.0, 10),
+  ('NAS-01', 22.366, 91.832, 'CDA Avenue, Nasirabad, Chittagong', 'Available', 'Minivan', 80, ARRAY['CCTV', 'Multi-storey parking'], '8 AM - 12 AM', 4.6, 28),
+  ('JAM-01', 22.370, 91.835, 'Jamalkhan, Chittagong', 'Available', 'Car', 60, ARRAY['Valet parking', 'Guarded'], '24/7', 4.9, 45),
+  ('CBZ-01', 22.345, 91.838, 'Chawkbazar, Chittagong', 'Available', 'Bike', 25, ARRAY['CCTV'], '7 AM - 11 PM', 4.0, 0),
+  ('KHL-01', 22.375, 91.840, 'Khulshi, Chittagong', 'Occupied', 'SUV', 75, ARRAY['Multi-storey parking', 'Guarded'], '24/7', 4.7, 33),
+  ('KHL-02', 22.376, 91.842, 'Near Khulshi Mart, Chittagong', 'Available', 'Car', 65, ARRAY['CCTV', 'Guarded'], '9 AM - 10 PM', 0, 0),
+  ('ZKB-01', 22.361, 91.825, 'Sanmar Ocean City, Chittagong', 'Reserved', 'Car', 80, ARRAY['CCTV', 'Guarded', 'Multi-storey parking'], '10 AM - 10 PM', 4.8, 180),
 
--- Note: We cannot easily insert mock Users or Reservations because they depend on valid Auth UIDs which are generated by Supabase Auth.
--- You should sign up a user in your app first, then you can manually insert reservations for testing if needed.
+  -- Dhaka
+  ('Gulshan DCC-01', 23.7925, 90.4078, 'Gulshan 1 DCC Market, Dhaka', 'Available', 'SUV', 120, ARRAY['CCTV', 'Guarded', 'Multi-storey parking'], '24/7', 4.9, 150),
+  ('Bashundhara-01', 23.7522, 90.3905, 'Bashundhara City, Panthapath, Dhaka', 'Occupied', 'Car', 100, ARRAY['Multi-storey parking', 'Valet parking'], '10 AM - 10 PM', 4.7, 250),
+  ('Dhanmondi-32', 23.7461, 90.3752, 'Rd No 32, Dhanmondi, Dhaka', 'Available', 'Bike', 30, ARRAY['CCTV'], '24/7', 4.3, 50),
+  ('Motijheel-01', 23.7277, 90.4191, 'Shapla Chattar, Motijheel, Dhaka', 'Available', 'Car', 90, ARRAY['Guarded'], '9 AM - 9 PM', 4.1, 95),
+  ('Uttara-Jashimuddin', 23.8698, 90.3938, 'Jashimuddin Avenue, Uttara, Dhaka', 'Reserved', 'Minivan', 85, ARRAY['CCTV', 'Guarded'], '24/7', 4.6, 120),
+  ('Mirpur-Stadium', 23.8055, 90.3541, 'Sher-e-Bangla Stadium, Mirpur, Dhaka', 'Available', 'SUV', 110, ARRAY['Guarded', 'Valet parking'], 'Event-based', 4.8, 200),
+
+  -- Sylhet
+  ('Zindabazar-01', 24.8949, 91.8687, 'Zindabazar Point, Sylhet', 'Available', 'Car', 40, ARRAY['Guarded'], '8 AM - 10 PM', 4.3, 15),
+  ('BlueWater-01', 24.8955, 91.8690, 'Blue Water Shopping City, Sylhet', 'Reserved', 'SUV', 50, ARRAY['Multi-storey parking'], '10 AM - 10 PM', 0, 0),
+  ('Ambarkhana-01', 24.9021, 91.8679, 'Ambarkhana Point, Sylhet', 'Available', 'Bike', 15, ARRAY[], '24/7', 0, 0),
+  ('Hotel Grand View', 24.8911, 91.8744, 'Taltola, Sylhet', 'Available', 'Car', 60, ARRAY['CCTV', 'Valet parking'], '24/7', 0, 0);
+
+-- Note: We cannot insert mock Users or Reservations here because they depend on valid Auth UIDs which are generated by Supabase Auth.
+-- The handle_new_user trigger will take care of creating user profiles when you sign up in the app.

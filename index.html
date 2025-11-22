@@ -1,117 +1,22 @@
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Park-Eazy</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-      crossorigin=""/>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    <link rel="stylesheet" href="/styles.css" />
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Quicksand', 'Inter', 'sans-serif'], // Switched to Quicksand for Candyland feel
-              body: ['Inter', 'sans-serif'],
-            },
-            colors: {
-              // Candyland Primary: Pink to Purple gradient usually
-              primary: {
-                DEFAULT: '#d946ef', // fuchsia-500
-                '50': '#fdf4ff',
-                '100': '#fae8ff',
-                '200': '#f5d0fe',
-                '300': '#f0abfc',
-                '400': '#e879f9',
-                '500': '#d946ef',
-                '600': '#c026d3',
-                '700': '#a21caf',
-              },
-              secondary: '#8b5cf6', // violet-500
-              candy: {
-                pink: '#ec4899', // pink-500
-                purple: '#a855f7', // purple-500
-                mint: '#34d399', // emerald-400
-                yellow: '#fbbf24', // amber-400
-                blue: '#60a5fa', // blue-400
-              },
-              'light-bg': '#fff1f2', // rose-50
-              'dark-bg': '#1e1b4b', // indigo-950
-            },
-            animation: {
-              fadeIn: 'fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-              slideUp: 'slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-              pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              bounce: 'bounce 1s infinite',
-              spin: 'spin 1s linear infinite',
-              'pop-in': 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-            },
-            keyframes: {
-              fadeIn: {
-                'from': { opacity: 0, transform: 'translateY(10px) scale(0.98)' },
-                'to': { opacity: 1, transform: 'translateY(0) scale(1)' },
-              },
-              slideUp: {
-                'from': { opacity: 0, transform: 'translateY(30px)' },
-                'to': { opacity: 1, transform: 'translateY(0)' },
-              },
-              popIn: {
-                '0%': { opacity: 0, transform: 'scale(0.5)' },
-                '100%': { opacity: 1, transform: 'scale(1)' },
-              },
-              pulse: {
-                '0%, 100%': { opacity: 1 },
-                '50%': { opacity: 0.5 },
-              },
-              spin: {
-                'to': { transform: 'rotate(360deg)' },
-              },
-            },
-            borderRadius: {
-              '4xl': '2rem',
-              '5xl': '2.5rem',
-            }
-          },
-        },
-      }
-    </script>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@19.2.0",
-    "react/jsx-runtime": "https://aistudiocdn.com/react@19.2.0/jsx-runtime",
-    "react-dom": "https://aistudiocdn.com/react-dom@19.2.0",
-    "react-dom/client": "https://aistudiocdn.com/react-dom@19.2.0/client",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@0.553.0?deps=react@19.2.0,react-dom@19.2.0",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@6.24.1?deps=react@19.2.0,react-dom@19.2.0",
-    "leaflet": "https://aistudiocdn.com/leaflet@1.9.4",
-    "react-leaflet": "https://aistudiocdn.com/react-leaflet@4.2.1?deps=react@19.2.0,react-dom@19.2.0,leaflet@1.9.4",
-    "leaflet.markercluster": "https://aistudiocdn.com/leaflet.markercluster@1.5.3",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@2.39.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "vite": "https://aistudiocdn.com/vite@^7.2.4",
-    "path": "https://aistudiocdn.com/path@^0.12.7",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "url": "https://aistudiocdn.com/url@^0.11.4"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Park-Eazy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Quicksand:wght@500;600;700&display=swap"
+    rel="stylesheet">
 </head>
-  <body class="bg-rose-50/50 dark:bg-[#0f172a] font-sans text-slate-800 dark:text-slate-200 selection:bg-fuchsia-200 selection:text-fuchsia-900">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+<body
+  class="bg-rose-50/50 dark:bg-[#0f172a] font-sans text-slate-800 dark:text-slate-200 selection:bg-fuchsia-200 selection:text-fuchsia-900">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>

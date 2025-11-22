@@ -1,14 +1,15 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { User, UserRole } from '../types';
-import { mockUsers } from '../data/mockData';
+import { supabase } from '../lib/supabaseClient';
+import { Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string) => Promise<void>;
-  logout: () => void;
-  updateUser: (updatedData: Partial<User>) => void;
+  logout: () => Promise<void>;
+  updateUser: (updatedData: Partial<User>) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,70 +21,139 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+
+  // Fetch user profile from public.users table
+  const fetchUserProfile = async (userId: string, email: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        // Fallback if profile doesn't exist yet (trigger might be slow)
+        return {
+          id: userId,
+          email: email,
+          name: email.split('@')[0],
+          role: UserRole.USER,
+        } as User;
+      }
+
+      return data as User;
+    } catch (err) {
+      console.error('Unexpected error fetching profile:', err);
+      return null;
+    }
+  };
 
   useEffect(() => {
-    // Simulate checking for a logged-in user in local storage
-    try {
-      const storedUser = localStorage.getItem('park-eazy-user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id, session.user.email!).then(profile => {
+          setUser(profile);
+          setLoading(false);
+        });
+      } else {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to parse user from localStorage", error);
-      localStorage.removeItem('park-eazy-user');
-    } finally {
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id, session.user.email!);
+        setUser(profile);
+      } else {
+        setUser(null);
+      }
       setLoading(false);
-    }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  // Login function (Magic Link for simplicity in this demo, or Passwordless)
+  // For this specific codebase which simulates "login(email)", we will use 
+  // Supabase's signInWithOtp (Magic Link) or just simulate if in mock mode.
+  // However, the previous code was just "enter email -> logged in". 
+  // To keep it simple but "real", we'll use a hardcoded password for demo 
+  // OR just sign up anonymously if it's a demo.
+  // ACTUALLY: The user asked to "include authentication". 
+  // Let's implement a proper Magic Link login since we only take email.
 
   const login = useCallback(async (email: string): Promise<void> => {
     setLoading(true);
-    // Simulate API call
-    await new Promise(res => setTimeout(res, 500));
-    
-    const lowercasedEmail = email.toLowerCase();
-    
-    // Prioritize exact email match (case-insensitive)
-    let foundUser: User | undefined = mockUsers.find(u => u.email.toLowerCase() === lowercasedEmail);
-    
-    // Fallback to demo logic if no exact match is found
-    if (!foundUser) {
-        if (lowercasedEmail.startsWith('user')) {
-          foundUser = mockUsers.find(u => u.role === UserRole.USER);
-        } else if (lowercasedEmail.startsWith('admin')) {
-          foundUser = mockUsers.find(u => u.role === UserRole.ADMIN);
-        } else if (lowercasedEmail.startsWith('superadmin')) {
-          foundUser = mockUsers.find(u => u.role === UserRole.SUPER_ADMIN);
-        }
-    }
-    
-    if (foundUser) {
-      // Always use the provided email for login session, but keep the found user's other details
-      const userToLogin = {...foundUser, email};
-      setUser(userToLogin);
-      localStorage.setItem('park-eazy-user', JSON.stringify(userToLogin));
-    } else {
+
+    // Check if we are in "Mock Mode" (no keys)
+    if (!(import.meta as any).env.VITE_SUPABASE_URL) {
+      console.warn("Supabase keys missing. Using mock login.");
+      // ... (Keep existing mock logic for fallback?)
+      // For now, let's throw an error to encourage setting up Supabase
+      // or just use the mock logic as a fallback.
+      // Let's keep the mock logic as a fallback for safety.
+      const { mockUsers } = await import('../data/mockData');
+      const lowercasedEmail = email.toLowerCase();
+      let foundUser = mockUsers.find(u => u.email.toLowerCase() === lowercasedEmail);
+      if (!foundUser) {
+        // Demo logic
+        if (lowercasedEmail.startsWith('user')) foundUser = mockUsers.find(u => u.role === UserRole.USER);
+        else if (lowercasedEmail.startsWith('admin')) foundUser = mockUsers.find(u => u.role === UserRole.ADMIN);
+        else if (lowercasedEmail.startsWith('superadmin')) foundUser = mockUsers.find(u => u.role === UserRole.SUPER_ADMIN);
+      }
+      if (foundUser) {
+        setUser({ ...foundUser, email });
         setLoading(false);
-        throw new Error('User not found');
+        return;
+      }
     }
+
+    // Real Supabase Login (Magic Link)
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      setLoading(false);
+      throw error;
+    }
+
+    // Note: In a real app, this would wait for the user to click the link.
+    // Since the UI expects an immediate login for the demo, we might need to alert the user.
+    alert(`Magic link sent to ${email}. Please check your inbox to log in.`);
     setLoading(false);
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('park-eazy-user');
   }, []);
-  
-  const updateUser = useCallback((updatedData: Partial<User>) => {
-    setUser(currentUser => {
-      if (currentUser) {
-        const updatedUser = { ...currentUser, ...updatedData };
-        localStorage.setItem('park-eazy-user', JSON.stringify(updatedUser));
-        return updatedUser;
-      }
-      return null;
-    });
-  }, []);
+
+  const updateUser = useCallback(async (updatedData: Partial<User>) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('users')
+      .update(updatedData)
+      .eq('id', user.id);
+
+    if (!error) {
+      setUser(prev => prev ? { ...prev, ...updatedData } : null);
+    } else {
+      console.error("Failed to update user:", error);
+    }
+  }, [user]);
 
   const value = useMemo(() => ({ user, loading, login, logout, updateUser }), [user, loading, login, logout, updateUser]);
 

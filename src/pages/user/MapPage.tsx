@@ -14,7 +14,7 @@ import { geocodeWithRateLimit } from '../../utils/geocoding';
 import { mockLocations } from '../../data/mockData';
 import { formatDistance } from '../../utils/formatters';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { analyzeUserPattern, UserParkingPattern, getGeneralSuggestion } from '../../utils/smartDefaults';
+import { getUserParkingHistory, UserParkingHistory, getGeneralTip } from '../../utils/recommendations';
 import { BottomSheet } from '../../components/common/BottomSheet';
 import SlotEditModal from '../../components/modals/SlotEditModal';
 import ConfirmationModal from '../../components/modals/ConfirmationModal';
@@ -228,9 +228,9 @@ const MapPage: React.FC = () => {
     const navigate = useNavigate();
 
     const [quickDuration, setQuickDuration] = useState<number | null>(null);
-    const [userPattern, setUserPattern] = useState<UserParkingPattern | null>(null);
+    const [userPattern, setUserPattern] = useState<UserParkingHistory | null>(null);
     const [showSuggestion, setShowSuggestion] = useState(true);
-    const [isSmartSuggestionsEnabled, setIsSmartSuggestionsEnabled] = useState(true);
+    const [isRecommendationsEnabled, setIsRecommendationsEnabled] = useState(true);
 
     if (!reservationContext || !authContext || !authContext.user) {
         return <FullPageLoader />;
@@ -305,7 +305,7 @@ const MapPage: React.FC = () => {
     }, [map]);
 
     useEffect(() => {
-        const pattern = analyzeUserPattern(allUserReservations);
+        const pattern = getUserParkingHistory(allUserReservations);
         setUserPattern(pattern);
     }, [allUserReservations]);
 
@@ -649,7 +649,7 @@ const MapPage: React.FC = () => {
                         </div>
                     </div>
 
-                    {!isAdmin && isSmartSuggestionsEnabled && showSuggestion && !selectedSlot && !isSuggestionsVisible && (
+                    {!isAdmin && isRecommendationsEnabled && showSuggestion && !selectedSlot && !isSuggestionsVisible && (
                         <div className="absolute top-20 left-0 w-full animate-slideUp map-controls-container px-1">
                             <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-xl p-4 border-l-4 border-primary relative">
                                 {(() => {
@@ -668,7 +668,7 @@ const MapPage: React.FC = () => {
                                                     <>
                                                         <div className="flex items-center gap-2 mb-2">
                                                             <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-                                                            <h3 className="font-bold text-slate-900 dark:text-white">Smart Suggestion</h3>
+                                                            <h3 className="font-bold text-slate-900 dark:text-white">Recommended for You</h3>
                                                         </div>
                                                         <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">It looks like your usual time. <strong>{favSlot.name}</strong> is free!</p>
                                                         <Button size="sm" onClick={() => { handleMarkerClick(favSlot); setQuickDuration(userPattern.averageDuration); setShowSuggestion(false); }} className="w-full font-semibold shadow-lg shadow-primary/20">Quick Book ({userPattern.averageDuration}h)</Button>
@@ -678,7 +678,7 @@ const MapPage: React.FC = () => {
                                         }
                                     }
                                     if (!suggestionContent) {
-                                        const generalTip = getGeneralSuggestion();
+                                        const generalTip = getGeneralTip();
                                         suggestionContent = (
                                             <>
                                                 <div className="flex items-center gap-2 mb-1">
@@ -828,11 +828,11 @@ const MapPage: React.FC = () => {
                         {!isAdmin && (
                             <button
                                 onClick={() => {
-                                    setIsSmartSuggestionsEnabled(!isSmartSuggestionsEnabled);
-                                    if (!isSmartSuggestionsEnabled) setShowSuggestion(true);
+                                    setIsRecommendationsEnabled(!isRecommendationsEnabled);
+                                    if (!isRecommendationsEnabled) setShowSuggestion(true);
                                 }}
-                                className={`w-11 h-11 rounded-full shadow-xl transition-all duration-300 flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:scale-110 active:scale-95 ${isSmartSuggestionsEnabled ? 'bg-amber-400 text-white hover:bg-amber-500 shadow-amber-400/30' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
-                                title={isSmartSuggestionsEnabled ? "Disable Smart Suggestions" : "Enable Smart Suggestions"}
+                                className={`w-11 h-11 rounded-full shadow-xl transition-all duration-300 flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:scale-110 active:scale-95 ${isRecommendationsEnabled ? 'bg-amber-400 text-white hover:bg-amber-500 shadow-amber-400/30' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
+                                title={isRecommendationsEnabled ? "Disable Recommendations" : "Enable Recommendations"}
                             >
                                 <Sparkles className="w-5 h-5" />
                             </button>

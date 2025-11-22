@@ -6,23 +6,23 @@ import Button from '../../components/common/Button';
 import { ArrowLeft, Clock, Tag, CircleDollarSign, Car } from 'lucide-react';
 import { formatCurrency, formatDateTimeLocal } from '../../utils/formatters';
 import { ReservationContext } from '../../contexts/ReservationContext';
-import { analyzeUserPattern, UserParkingPattern } from '../../utils/smartDefaults';
+import { getUserParkingHistory, UserParkingHistory } from '../../utils/recommendations';
 
 const ReservationConfirmationPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { slot } = location.state as { slot: ParkingSlot };
     const reservationContext = useContext(ReservationContext);
-    
+
     const [startTime, setStartTime] = useState<Date | null>(null);
     const [endTime, setEndTime] = useState<Date | null>(null);
     const [initialStartTime, setInitialStartTime] = useState<Date | null>(null);
-    
+
     const [duration, setDuration] = useState(0);
     const [totalCost, setTotalCost] = useState(0);
     const [error, setError] = useState('');
-    const [userPattern, setUserPattern] = useState<UserParkingPattern | null>(null);
-    
+    const [userPattern, setUserPattern] = useState<UserParkingHistory | null>(null);
+
     if (!reservationContext) {
         navigate('/map');
         return null;
@@ -35,20 +35,20 @@ const ReservationConfirmationPage: React.FC = () => {
         now.setMinutes(roundedMinutes);
         now.setSeconds(0);
         now.setMilliseconds(0);
-        
+
         const defaultStartTime = new Date(now);
-        
+
         const userReservations = reservationContext.getReservationsForCurrentUser();
-        const pattern = analyzeUserPattern(userReservations);
+        const pattern: UserParkingHistory = getUserParkingHistory(userReservations);
         setUserPattern(pattern);
-        
+
         let defaultEndTime;
         if (pattern.averageDuration > 0) {
             defaultEndTime = new Date(now.getTime() + pattern.averageDuration * 60 * 60 * 1000);
         } else {
             defaultEndTime = new Date(now.getTime() + 60 * 60 * 1000); // fallback to 1 hour
         }
-        
+
         setInitialStartTime(defaultStartTime);
         setStartTime(defaultStartTime);
         setEndTime(defaultEndTime);
@@ -69,7 +69,7 @@ const ReservationConfirmationPage: React.FC = () => {
             }
         }
     }, [startTime, endTime, slot.pricePerHour]);
-    
+
     const handleReset = () => {
         const now = new Date();
         const minutes = now.getMinutes();
@@ -129,7 +129,7 @@ const ReservationConfirmationPage: React.FC = () => {
                     </div>
                 )}
                 <div className="space-y-4">
-                     <div>
+                    <div>
                         <label htmlFor="startTime" className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Start Time</label>
                         <input
                             id="startTime"
@@ -139,10 +139,10 @@ const ReservationConfirmationPage: React.FC = () => {
                             onChange={(e) => setStartTime(e.target.value ? new Date(e.target.value) : null)}
                             className="w-full p-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md"
                         />
-                     </div>
-                     <div>
+                    </div>
+                    <div>
                         <label htmlFor="endTime" className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">End Time</label>
-                         <input
+                        <input
                             id="endTime"
                             type="datetime-local"
                             value={formatDateTimeLocal(endTime)}
@@ -150,13 +150,13 @@ const ReservationConfirmationPage: React.FC = () => {
                             onChange={(e) => setEndTime(e.target.value ? new Date(e.target.value) : null)}
                             className="w-full p-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md"
                         />
-                     </div>
-                     {error && <p className="text-sm text-red-500">{error}</p>}
+                    </div>
+                    {error && <p className="text-sm text-red-500">{error}</p>}
                 </div>
             </Card>
 
             <Card>
-                 <div className="space-y-3">
+                <div className="space-y-3">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
                             <Clock className="w-5 h-5 text-slate-400" />
@@ -173,7 +173,7 @@ const ReservationConfirmationPage: React.FC = () => {
                     </div>
                 </div>
             </Card>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Button onClick={handleReset} variant="secondary" size="lg">Reset Times</Button>
                 <Button onClick={handleProceedToPayment} className="w-full" size="lg" disabled={!!error || duration <= 0}>

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Map, Clock, Car, BookMarked, CircleDollarSign, Star, MapPin } from 'lucide-react';
 import StatCard from '../../components/common/StatCard';
 import { formatCurrency } from '../../utils/formatters';
-import { analyzeUserPattern, UserParkingPattern } from '../../utils/smartDefaults';
+import { getUserParkingHistory, UserParkingHistory } from '../../utils/recommendations';
 import { ParkingSlot } from '../../types';
 import FullPageLoader from '../../components/common/FullPageLoader';
 
@@ -15,7 +15,7 @@ const UserDashboard: React.FC = () => {
   const authContext = useContext(AuthContext);
   const reservationContext = useContext(ReservationContext);
   const [timeLeft, setTimeLeft] = useState('');
-  const [userPattern, setUserPattern] = useState<UserParkingPattern | null>(null);
+  const [userPattern, setUserPattern] = useState<UserParkingHistory | null>(null);
   const navigate = useNavigate();
 
   if (!authContext || !authContext.user || !reservationContext) {
@@ -23,7 +23,7 @@ const UserDashboard: React.FC = () => {
   }
   const { user } = authContext;
   const { getActiveReservationForCurrentUser, getReservationsForCurrentUser, slots } = reservationContext;
-  
+
   const activeReservation = getActiveReservationForCurrentUser();
   const allReservations = getReservationsForCurrentUser();
 
@@ -31,7 +31,7 @@ const UserDashboard: React.FC = () => {
   const totalSpent = allReservations.reduce((sum, res) => sum + res.totalCost, 0);
 
   useEffect(() => {
-    const pattern = analyzeUserPattern(allReservations);
+    const pattern: UserParkingHistory = getUserParkingHistory(allReservations);
     setUserPattern(pattern);
   }, [allReservations]);
 
@@ -50,16 +50,16 @@ const UserDashboard: React.FC = () => {
         setTimeLeft(`${hours}h ${minutes}m ${seconds}s remaining`);
       }
     }, 1000);
-    
+
     return () => clearInterval(intervalId);
   }, [activeReservation]);
 
   const activeSlot = activeReservation ? slots.find(s => s.id === activeReservation.slotId) : null;
-  
+
   const handleCardNavigation = (path: string, state?: object) => {
     navigate(path, { state });
   };
-  
+
   return (
     <div className="space-y-8 animate-fadeIn">
       <div>
@@ -70,21 +70,21 @@ const UserDashboard: React.FC = () => {
       {activeReservation && activeSlot ? (
         <Card className="bg-white dark:bg-slate-800 border-2 border-primary/50 dark:border-primary/70 shadow-sm animate-fadeIn [animation-delay:100ms]">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <div className="text-sm font-semibold text-primary">Active Reservation</div>
-                <div className="flex items-center gap-2 mt-2 text-slate-800 dark:text-slate-200">
-                  <Car className="w-5 h-5"/>
-                  <span className="font-semibold text-lg">{activeSlot.name}</span>
-                  <span>({activeSlot.type})</span>
-                </div>
-                <div className="flex items-center gap-2 mt-1 text-slate-800 dark:text-slate-200">
-                  <Clock className="w-5 h-5"/>
-                  <span className="font-mono">{timeLeft}</span>
-                </div>
+            <div>
+              <div className="text-sm font-semibold text-primary">Active Reservation</div>
+              <div className="flex items-center gap-2 mt-2 text-slate-800 dark:text-slate-200">
+                <Car className="w-5 h-5" />
+                <span className="font-semibold text-lg">{activeSlot.name}</span>
+                <span>({activeSlot.type})</span>
               </div>
-              <Button onClick={() => navigate('/active-reservation')}>
-                View Details
-              </Button>
+              <div className="flex items-center gap-2 mt-1 text-slate-800 dark:text-slate-200">
+                <Clock className="w-5 h-5" />
+                <span className="font-mono">{timeLeft}</span>
+              </div>
+            </div>
+            <Button onClick={() => navigate('/active-reservation')}>
+              View Details
+            </Button>
           </div>
         </Card>
       ) : (
@@ -95,7 +95,7 @@ const UserDashboard: React.FC = () => {
               <p className="text-slate-500 dark:text-slate-400 mt-1">Find and book a parking spot near you.</p>
             </div>
             <Button onClick={() => navigate('/map')}>
-                <Map className="w-5 h-5 mr-2" /> Find Parking
+              <Map className="w-5 h-5 mr-2" /> Find Parking
             </Button>
           </div>
         </Card>
@@ -111,7 +111,7 @@ const UserDashboard: React.FC = () => {
             {userPattern.favoriteSlots.map(slotId => {
               const slot = slots.find(s => s.id === slotId);
               if (!slot) return null;
-              
+
               const navState = { slotId: slot.id };
 
               return (
@@ -138,8 +138,8 @@ const UserDashboard: React.FC = () => {
                     size="sm"
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => {
-                        e.stopPropagation();
-                        handleCardNavigation('/map', navState);
+                      e.stopPropagation();
+                      handleCardNavigation('/map', navState);
                     }}
                   >
                     Book Again
@@ -148,11 +148,11 @@ const UserDashboard: React.FC = () => {
               );
             })}
           </div>
-          
+
           {userPattern.averageDuration && (
             <div className="mt-3 p-3 bg-white/40 dark:bg-slate-800/40 rounded-lg">
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                💡 <strong>Smart Tip:</strong> You typically park for{' '}
+                💡 <strong>Quick Tip:</strong> You typically park for{' '}
                 <span className="font-semibold text-primary">
                   {userPattern.averageDuration} hours
                 </span>
@@ -166,8 +166,8 @@ const UserDashboard: React.FC = () => {
       <div className="animate-fadeIn [animation-delay:200ms]">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Your Stats</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="animate-fadeIn [animation-delay:300ms]"><StatCard icon={BookMarked} title="Total Bookings" value={totalBookings.toString()} /></div>
-            <div className="animate-fadeIn [animation-delay:400ms]"><StatCard icon={CircleDollarSign} title="Total Spent" value={formatCurrency(totalSpent)} /></div>
+          <div className="animate-fadeIn [animation-delay:300ms]"><StatCard icon={BookMarked} title="Total Bookings" value={totalBookings.toString()} /></div>
+          <div className="animate-fadeIn [animation-delay:400ms]"><StatCard icon={CircleDollarSign} title="Total Spent" value={formatCurrency(totalSpent)} /></div>
         </div>
       </div>
     </div>
