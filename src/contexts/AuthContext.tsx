@@ -22,6 +22,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
+  const mounted = React.useRef(true);
 
   // Fetch user profile from public.users table
   const fetchUserProfile = async (userId: string, email: string) => {
@@ -51,7 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    // Add timeout to prevent infinite loading
+    mounted.current = true;
     const initAuth = async () => {
       try {
         // Race between auth check and 10s timeout
@@ -66,60 +67,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           timeoutPromise
         ]) as any;
 
+        if (!mounted.current) return;
+
         setSession(session);
-        mounted.current = true;
-
-        // Timeout guard
-        const timeoutTimer = setTimeout(async () => {
+        if (session?.user) {
+          const profile = await fetchUserProfile(session.user.id, session.user.email!);
           if (mounted.current) {
-            console.error('Auth initialization timeout');
-            // Force cleanup if we time out
-            await supabase.auth.signOut();
-            localStorage.removeItem('sb-' + import.meta.env.VITE_SUPABASE_URL + '-auth-token');
-            setLoading(false);
-          }
-        }, 10000); // 10s timeout
-
-        // Check active session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (!mounted.current) return;
-          clearTimeout(timeoutTimer);
-          setSession(session);
-          if (session?.user) {
-            fetchUserProfile(session.user.id, session.user.email!).then(profile => {
-              if (mounted.current) {
-                setUser(profile);
-                setLoading(false);
-              }
-            });
-          } else {
-            setLoading(false);
-          }
-        }).catch(err => {
-          console.error('Auth getSession error:', err);
-          if (mounted.current) setLoading(false);
-        });
-
-        // Listen for auth changes
-        const {
-          data: { subscription },
-        } = supabase.auth.onAuthStateChange(async (_event, session) => {
-          if (!mounted.current) return;
-          setSession(session);
-          if (session?.user) {
-            const profile = await fetchUserProfile(session.user.id, session.user.email!);
             setUser(profile);
-          } else {
-            setUser(null);
           }
-        });
+        }
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        if (mounted.current) {
+          // Force cleanup on timeout/error to prevent stuck loading state
+          await supabase.auth.signOut();
+          localStorage.removeItem('sb-' + import.meta.env.VITE_SUPABASE_URL + '-auth-token');
+        }
+      } finally {
+        if (mounted.current) {
+          setLoading(false);
+        }
+      }
+    };
 
-        return () => {
-          mounted.current = false;
-          clearTimeout(timeoutTimer);
-          subscription.unsubscribe();
-        };
-      }, []);
+    initAuth();
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted.current) return;
+      setSession(session);
+      if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id, session.user.email!);
+        if (mounted.current) setUser(profile);
+      } else {
+        if (mounted.current) setUser(null);
+      }
+      if (mounted.current) setLoading(false);
+    });
+
+    return () => {
+      mounted.current = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Login function with password authentication
   const login = useCallback(async (email: string, password: string): Promise<void> => {
