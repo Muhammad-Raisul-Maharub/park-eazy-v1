@@ -655,7 +655,7 @@ const MapPage: React.FC = () => {
                     <MapEventsHandler onMapClick={handleMapClick} />
                     <ParkingMarkers slots={filteredSlots} onMarkerClick={handleMarkerClick} />
                     {userLocation && <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999}><Popup><div className="text-center font-sans"><p className="font-semibold text-blue-600">You are here</p><p className="text-xs text-slate-500 mt-1">Accurate to {accuracy?.toFixed(0)}m</p></div></Popup></Marker>}
-                    {userLocation && accuracy && <Circle center={userLocation} radius={Math.min(accuracy, 100)} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.15, weight: 1.5, dashArray: '5, 5', stroke: true }} />}
+                    {userLocation && <Circle center={userLocation} radius={20} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.15, weight: 1.5, dashArray: '5, 5', stroke: true }} />}
                     {searchedLocation && <Marker key={`search-${searchedLocation.lat}-${searchedLocation.lng}`} position={searchedLocation} icon={searchedLocationIcon()}><Popup>Searched Location</Popup></Marker>}
                     {selectedSlot && <Marker position={selectedSlot.location} icon={getHighlightIcon(selectedSlot)} zIndexOffset={1000} />}
                 </MapContainer>

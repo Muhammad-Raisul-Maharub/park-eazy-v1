@@ -186,43 +186,92 @@ body {
 }
 
 .user-location-marker .dot {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   background-color: #3b82f6;
   /* Blue-500 */
-  border: 3px solid white;
+  border: 4px solid white;
   border-radius: 50%;
   z-index: 20;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.6), 0 0 0 2px rgba(59, 130, 246, 0.2);
+  animation: dot-pulse 2s ease-in-out infinite;
 }
 
+/* Core blue dot subtle pulse */
+@keyframes dot-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 3px 10px rgba(59, 130, 246, 0.6), 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.8), 0 0 0 3px rgba(59, 130, 246, 0.3);
+  }
+}
+
+/* Primary expanding pulse ring */
 .user-location-marker .pulse {
   position: absolute;
-  top: 50%;
+  top: 50%
+;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background-color: rgba(59, 130, 246, 0.6);
+  background-color: rgba(59, 130, 246, 0.7);
   z-index: 10;
   animation: pulse-ring 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
+/* Secondary pulse ring (creates double-wave effect) */
+.user-location-marker .pulse::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: rgba(59, 130, 246, 0.5);
+  animation: pulse-ring-secondary 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) 0.4s infinite;
+}
+
+/* Primary pulse animation */
 @keyframes pulse-ring {
   0% {
-    width: 16px;
-    height: 16px;
-    opacity: 0.8;
+    width: 20px;
+    height: 20px;
+    opacity: 0.9;
   }
 
   50% {
-    opacity: 0.5;
+    opacity: 0.6;
   }
 
   100% {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
+    opacity: 0;
+  }
+}
+
+/* Secondary pulse (delayed, creates ripple effect) */
+@keyframes pulse-ring-secondary {
+  0% {
+    width: 100%;
+    height: 100%;
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+
+  100% {
+    width: 200%;
+    height: 200%;
     opacity: 0;
   }
 }
