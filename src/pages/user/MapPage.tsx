@@ -2,6 +2,7 @@
 import React, { useContext, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, useMap, Marker, Popup, useMapEvents, Circle } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet.markercluster';
 import { ReservationContext } from '../../contexts/ReservationContext';
 import { AuthContext } from '../../contexts/AuthContext';
 import { LogContext } from '../../contexts/LogContext';
