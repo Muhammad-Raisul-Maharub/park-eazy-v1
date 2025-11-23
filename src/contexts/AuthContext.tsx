@@ -44,7 +44,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } as User;
       }
 
-      return data as User;
+      // Map database fields to User interface
+      // Database has: user_id, email, name, role, is_admin
+      // User interface expects: id, email, name, role
+      return {
+        id: data.user_id,
+        email: data.email,
+        name: data.name,
+        role: data.role as UserRole,  // Ensure role is cast to UserRole enum
+      } as User;
     } catch (err) {
       console.error('Unexpected error fetching profile:', err);
       return null;
