@@ -124,7 +124,7 @@ const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
   useEffect(() => {
     // Check Supabase connection on app mount (non-blocking)
-    testSupabaseConnection().catch(err => console.error('Supabase test failed:', err));
+    testSupabaseConnection();
   }, []);
 
   return (
