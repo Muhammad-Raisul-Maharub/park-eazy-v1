@@ -237,6 +237,17 @@ const MapPage: React.FC = () => {
         return <FullPageLoader />;
     }
     const { slots, loading, getReservationsForCurrentUser, addSlot, updateSlot, deleteSlot } = reservationContext;
+
+    // 🔍 DEBUG: Log slots data
+    useEffect(() => {
+        console.log('📍 MapPage: Slots updated', {
+            count: slots.length,
+            loading,
+            sample: slots[0],
+            hasLocation: slots[0]?.location
+        });
+    }, [slots, loading]);
+
     const { user } = authContext;
     const allUserReservations = getReservationsForCurrentUser();
 
@@ -279,6 +290,14 @@ const MapPage: React.FC = () => {
             (selectedTypes.length === 0 || selectedTypes.includes(slot.type)) &&
             (selectedFeatures.length === 0 || selectedFeatures.every(f => slot.features?.includes(f)))
         );
+
+        // 🔍 DEBUG: Log filtering results
+        console.log('🎯 MapPage: Filtered slots', {
+            total: slots.length,
+            filtered: filtered.length,
+            filters: { selectedStatuses, selectedTypes, selectedFeatures }
+        });
+
         return filtered;
     }, [slots, selectedStatuses, selectedTypes, selectedFeatures]);
 

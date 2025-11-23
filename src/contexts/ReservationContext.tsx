@@ -61,6 +61,14 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
             rating: lot.rating || 0,
             reviews: lot.total_reviews || 0,
           }));
+
+          // 🔍 DEBUG: Log fetched data
+          console.log('🔌 ReservationContext: Fetched lots', {
+            raw: lotsData.length,
+            mapped: mapped.length,
+            sample: mapped[0]
+          });
+
           setSlots(mapped);
         }
 
