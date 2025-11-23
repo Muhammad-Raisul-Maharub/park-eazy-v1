@@ -9,18 +9,29 @@ import Card from '../common/Card';
 import { allFeaturesList, featureIcons } from '../../utils/constants';
 import { geocodeWithRateLimit, GeocodedLocation } from '../../utils/geocoding';
 
+// Import local marker assets (instead of external CDN URLs)
+import markerIcon from '../../assets/leaflet/marker-icon.png';
+import markerIcon2x from '../../assets/leaflet/marker-icon-2x.png';
+import markerShadow from '../../assets/leaflet/marker-shadow.png';
+
 // Fix for default icon path issue in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconRetinaUrl: markerIcon2x,
+    iconUrl: markerIcon,
+    shadowUrl: markerShadow,
 });
 
-const activeMarkerIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+// Blue marker for active slot (using inline SVG instead of external URL)
+const activeMarkerIcon = L.divIcon({
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41">
+    <path fill="#3b82f6" stroke="#fff" stroke-width="2" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 8.3 12.5 28.5 12.5 28.5S25 20.8 25 12.5C25 5.6 19.4 0 12.5 0z"/>
+    <circle cx="12.5" cy="12.5" r="5" fill="#fff"/>
+  </svg>`,
+    className: 'custom-marker-icon',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
 });
 
 const chittagongCoords: [number, number] = [22.3569, 91.8339];
@@ -54,11 +65,11 @@ const DraggableMarker: React.FC<{ position: [number, number]; onDragEnd: (latlng
 // --- Leaflet Helper Components ---
 const MapEventsHandler: React.FC<{ onMapClick: (latlng: L.LatLng) => void, center: [number, number], zoom: number, setMap: (map: L.Map) => void }> = ({ onMapClick, center, zoom, setMap }) => {
     const map = useMap();
-    
+
     useEffect(() => {
         setMap(map);
     }, [map, setMap]);
-    
+
     // Click handler to move marker
     useMapEvents({ click: (e) => onMapClick(e.latlng) });
 
@@ -74,18 +85,18 @@ const MapEventsHandler: React.FC<{ onMapClick: (latlng: L.LatLng) => void, cente
     useEffect(() => {
         map.flyTo(center, zoom, { animate: true });
     }, [center, zoom, map]);
-    
+
     return null;
 };
 
 
 // --- Main Modal Component ---
 interface SlotEditModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (slot: ParkingSlot) => void;
-  slot: Partial<ParkingSlot> | null;
-  userLocation: [number, number] | null;
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (slot: ParkingSlot) => void;
+    slot: Partial<ParkingSlot> | null;
+    userLocation: [number, number] | null;
 }
 
 const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, slot, userLocation }) => {
@@ -93,7 +104,7 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
     const [mapCenter, setMapCenter] = useState<[number, number]>(userLocation || chittagongCoords);
     const [mapZoom, setMapZoom] = useState(13);
     const [map, setMap] = useState<L.Map | null>(null);
-    
+
     // Search State
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
@@ -118,7 +129,7 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
                 ...initialData
             };
             setFormData(newFormData);
-            
+
             const newCenter = newFormData.location || defaultLocation;
             setMapCenter(newCenter);
             setMapZoom(newFormData.location ? 16 : 13);
@@ -132,13 +143,13 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
             setSearchResults([]);
         }
     }, [isOpen, slot, userLocation]);
-    
+
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
         if (isOpen) document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
-    
+
     useEffect(() => {
         const delayDebounceFn = setTimeout(async () => {
             if (searchQuery.trim().length > 2) {
@@ -162,22 +173,22 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
     const handleMapClick = async (latlng: L.LatLng) => {
         const newLocation: [number, number] = [latlng.lat, latlng.lng];
         setFormData(prev => ({ ...prev, location: newLocation }));
-        
+
         try {
-             const results = await geocodeWithRateLimit(`${latlng.lat}, ${latlng.lng}`);
-             if (results.length > 0) {
-                 setFormData(prev => ({ ...prev, address: results[0].displayName }));
-             }
+            const results = await geocodeWithRateLimit(`${latlng.lat}, ${latlng.lng}`);
+            if (results.length > 0) {
+                setFormData(prev => ({ ...prev, address: results[0].displayName }));
+            }
         } catch (e) {
-             console.error("Failed to reverse geocode on drag", e);
+            console.error("Failed to reverse geocode on drag", e);
         }
     };
-    
+
     const handleSearchResultClick = (result: GeocodedLocation) => {
         const newLocation: [number, number] = [result.lat, result.lon];
         setMapCenter(newLocation);
         setMapZoom(17);
-        setFormData(prev => ({ ...prev, location: newLocation, address: result.displayName })); 
+        setFormData(prev => ({ ...prev, location: newLocation, address: result.displayName }));
         setSearchResults([]);
         setSearchQuery('');
     };
@@ -198,11 +209,11 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
                 setIsLocating(false);
 
                 try {
-                   const results = await geocodeWithRateLimit(`${latitude}, ${longitude}`);
-                   if (results.length > 0) {
-                       setFormData(prev => ({ ...prev, address: results[0].displayName }));
-                   }
-                } catch(e) {
+                    const results = await geocodeWithRateLimit(`${latitude}, ${longitude}`);
+                    if (results.length > 0) {
+                        setFormData(prev => ({ ...prev, address: results[0].displayName }));
+                    }
+                } catch (e) {
                     console.error("Failed to reverse geocode", e);
                 }
             },
@@ -228,7 +239,7 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
             return { ...prev, features: newFeatures };
         });
     };
-    
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name || !formData.address || !formData.location) {
@@ -257,7 +268,7 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1200] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="slot-modal-title" ref={modalRef}>
             <Card className="w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden animate-slideUp !p-0 !bg-slate-900 border border-slate-700 shadow-2xl">
-                
+
                 <div className="flex justify-between items-center p-5 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md z-10">
                     <h2 className="text-2xl font-bold text-white tracking-tight" id="slot-modal-title">
                         {formData.id ? 'Edit Slot Details' : 'Add New Slot'}
@@ -266,7 +277,7 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
                         <X size={20} />
                     </button>
                 </div>
-                
+
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto relative">
                     {/* Map Section - Taking prominence */}
                     <div className="relative h-[400px] w-full bg-slate-800 border-b border-slate-700 group">
@@ -282,11 +293,11 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <Search className="h-5 w-5 text-slate-400" />
                                 </div>
-                                <input 
-                                    type="text" 
-                                    value={searchQuery} 
+                                <input
+                                    type="text"
+                                    value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search location..." 
+                                    placeholder="Search location..."
                                     className="w-full pl-11 pr-4 py-3.5 rounded-full bg-slate-900/90 border border-slate-600 text-white shadow-xl focus:outline-none focus:border-primary backdrop-blur-md placeholder-slate-400"
                                 />
                                 {isSearching && <div className="absolute inset-y-0 right-4 flex items-center"><Loader2 className="h-5 w-5 text-primary animate-spin" /></div>}
@@ -294,7 +305,7 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
                             {searchResults.length > 0 && (
                                 <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto border border-slate-700">
                                     {searchResults.map((result, idx) => (
-                                        <button 
+                                        <button
                                             key={idx}
                                             type="button"
                                             onClick={() => handleSearchResultClick(result)}
@@ -309,16 +320,16 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
 
                         {/* Map Controls (Zoom + Locate Me) */}
                         <div className="absolute bottom-6 right-4 z-[1000] flex flex-col items-center gap-3">
-                            <button 
+                            <button
                                 type="button"
-                                onClick={handleLocateMe} 
+                                onClick={handleLocateMe}
                                 disabled={isLocating}
                                 className="w-11 h-11 flex items-center justify-center bg-white dark:bg-slate-800 rounded-full shadow-xl border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none transform transition-transform active:scale-95"
                                 title="Locate Me"
                             >
-                                {isLocating ? <Loader2 className="w-5 h-5 animate-spin text-primary"/> : <LocateFixed className="w-5 h-5" />}
+                                {isLocating ? <Loader2 className="w-5 h-5 animate-spin text-primary" /> : <LocateFixed className="w-5 h-5" />}
                             </button>
-                            
+
                             <div className="flex flex-col bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 overflow-hidden">
                                 <button
                                     type="button"
@@ -359,7 +370,7 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
 
                     {/* Form Fields Section */}
                     <div className="p-6 space-y-6 bg-slate-900">
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Left Column */}
                             <div className="space-y-5">
@@ -376,26 +387,26 @@ const SlotEditModal: React.FC<SlotEditModalProps> = ({ isOpen, onClose, onSave, 
                                     </select>
                                 </div>
                                 <div>
-                                     <label className={labelClasses} htmlFor="slot-name">Location Details *</label>
-                                     <textarea id="slot-address" name="address" value={formData.address || ''} onChange={handleChange} required className={`${inputClasses} h-[120px] resize-none`} placeholder="Address auto-fills from map..." />
-                                      <p className="text-[10px] text-slate-500 mt-1.5 text-right">Address auto-updates when moving the map marker</p>
+                                    <label className={labelClasses} htmlFor="slot-name">Location Details *</label>
+                                    <textarea id="slot-address" name="address" value={formData.address || ''} onChange={handleChange} required className={`${inputClasses} h-[120px] resize-none`} placeholder="Address auto-fills from map..." />
+                                    <p className="text-[10px] text-slate-500 mt-1.5 text-right">Address auto-updates when moving the map marker</p>
                                 </div>
                             </div>
 
                             {/* Right Column */}
                             <div className="space-y-5">
-                                 <div>
+                                <div>
                                     <label className={labelClasses} htmlFor="slot-price">Price/Hour (৳) *</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                             <span className="text-slate-400 font-bold">৳</span>
                                         </div>
-                                        <input type="number" id="slot-price" name="pricePerHour" value={formData.pricePerHour || ''} onChange={handleChange} required min="0" className={`${inputClasses} pl-10`} placeholder="50"/>
+                                        <input type="number" id="slot-price" name="pricePerHour" value={formData.pricePerHour || ''} onChange={handleChange} required min="0" className={`${inputClasses} pl-10`} placeholder="50" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className={labelClasses} htmlFor="slot-name">Slot Name/ID *</label>
-                                    <input type="text" id="slot-name" name="name" value={formData.name || ''} onChange={handleChange} required className={inputClasses} placeholder="e.g. A-101"/>
+                                    <input type="text" id="slot-name" name="name" value={formData.name || ''} onChange={handleChange} required className={inputClasses} placeholder="e.g. A-101" />
                                 </div>
                                 <div>
                                     <label className={labelClasses}>Features</label>
