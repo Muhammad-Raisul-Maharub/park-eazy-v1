@@ -3,6 +3,7 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Car, Eye, EyeOff } from 'lucide-react';
 import { AuthContext } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
 import GoogleButton from '../../components/common/GoogleButton';
 
 const SignupPage: React.FC = () => {
@@ -39,7 +40,7 @@ const SignupPage: React.FC = () => {
 
         setLoading(true);
         try {
-            await login(email); 
+            await login(email);
             navigate('/');
         } catch (err) {
             setError('Failed to sign up. This email might already be taken in our demo.');
@@ -49,25 +50,28 @@ const SignupPage: React.FC = () => {
     };
 
     const handleGoogleLogin = async () => {
-        const googleEmail = window.prompt("To simulate Google Sign-Up, please enter your email:");
-        if (googleEmail) {
-            setGoogleLoading(true);
-            setError('');
-            try {
-                await login(googleEmail); 
-                navigate('/');
-            } catch (err) {
-                setError('An unexpected error occurred during sign-up.');
-            } finally {
-                setGoogleLoading(false);
-            }
+        setGoogleLoading(true);
+        setError('');
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin,
+                },
+            });
+
+            if (error) throw error;
+            // OAuth will redirect, so we don't need to navigate
+        } catch (err: any) {
+            setError(err?.message || 'Failed to sign up with Google');
+            setGoogleLoading(false);
         }
     };
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat relative"
-             style={{ backgroundImage: "url('https://images.unsplash.com/photo-1506521781263-d8422e82f27a?q=80&w=2670&auto=format&fit=crop')" }}>
-            
+            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1506521781263-d8422e82f27a?q=80&w=2670&auto=format&fit=crop')" }}>
+
             <div className="absolute inset-0 bg-[#0f172a]/80 backdrop-blur-[4px]"></div>
 
             <div className="w-full max-w-[440px] bg-[#0f172a]/60 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 sm:p-10 shadow-2xl relative z-10 animate-fadeIn">
@@ -113,7 +117,7 @@ const SignupPage: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label htmlFor="password"className="text-sm font-medium text-slate-300">Password</label>
+                                <label htmlFor="password" className="text-sm font-medium text-slate-300">Password</label>
                                 <div className="relative">
                                     <input
                                         id="password"
@@ -132,12 +136,12 @@ const SignupPage: React.FC = () => {
                                         className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-[#10b981] transition-colors"
                                         tabIndex={-1}
                                     >
-                                        {showPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </button>
                                 </div>
                             </div>
-                             <div className="space-y-2">
-                                <label htmlFor="confirm-password"className="text-sm font-medium text-slate-300">Confirm</label>
+                            <div className="space-y-2">
+                                <label htmlFor="confirm-password" className="text-sm font-medium text-slate-300">Confirm</label>
                                 <div className="relative">
                                     <input
                                         id="confirm-password"
@@ -156,7 +160,7 @@ const SignupPage: React.FC = () => {
                                         className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-[#10b981] transition-colors"
                                         tabIndex={-1}
                                     >
-                                        {showConfirmPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </button>
                                 </div>
                             </div>
@@ -175,13 +179,13 @@ const SignupPage: React.FC = () => {
                         className="w-full mt-2 flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-[#10b981]/20 text-base font-bold text-white bg-[#10b981] hover:bg-[#059669] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#10b981] disabled:opacity-70 disabled:cursor-not-allowed transition-all transform hover:-translate-y-0.5 active:translate-y-0"
                     >
                         {loading ? (
-                        <div className="flex items-center gap-2">
-                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>Creating Account...</span>
-                        </div>
+                            <div className="flex items-center gap-2">
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Creating Account...</span>
+                            </div>
                         ) : 'Create Account'}
                     </button>
 
@@ -197,9 +201,9 @@ const SignupPage: React.FC = () => {
                     </div>
 
                     <div className="w-full">
-                        <GoogleButton 
-                            onClick={handleGoogleLogin} 
-                            isLoading={googleLoading} 
+                        <GoogleButton
+                            onClick={handleGoogleLogin}
+                            isLoading={googleLoading}
                             className="!bg-[#1e293b] !border-slate-700 hover:!bg-[#334155] !text-white"
                         >
                             Sign up with Google
