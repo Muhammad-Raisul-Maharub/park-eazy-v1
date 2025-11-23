@@ -23,7 +23,7 @@ const SignupPage: React.FC = () => {
         throw new Error('SignupPage must be used within an AuthProvider');
     }
 
-    const { login } = authContext;
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,10 +40,20 @@ const SignupPage: React.FC = () => {
 
         setLoading(true);
         try {
-            await login(email);
+            const { error: signUpError } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        name,
+                    },
+                },
+            });
+
+            if (signUpError) throw signUpError;
             navigate('/');
-        } catch (err) {
-            setError('Failed to sign up. This email might already be taken in our demo.');
+        } catch (err: any) {
+            setError(err.message || 'Failed to sign up.');
         } finally {
             setLoading(false);
         }
