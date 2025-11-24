@@ -1,10 +1,11 @@
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
 import { Car, Eye, EyeOff } from 'lucide-react';
 import GoogleButton from '../../components/common/GoogleButton';
+import { UserRole } from '../../types';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -28,6 +29,21 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       await login(email, password);
+
+      // Check for saved redirect route
+      const savedRoute = localStorage.getItem('park-eazy-redirect-after-login');
+      if (savedRoute) {
+        localStorage.removeItem('park-eazy-redirect-after-login');
+
+        // Validate route is not login/signup before redirecting
+        if (savedRoute !== '/login' && savedRoute !== '/signup') {
+          console.log('[LOGIN] Redirecting to saved route:', savedRoute);
+          navigate(savedRoute);
+          return;
+        }
+      }
+
+      // Default redirect to dashboard
       navigate('/');
     } catch (err: any) {
       console.error('Login error:', err);

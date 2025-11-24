@@ -8,7 +8,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { LogContext } from '../../contexts/LogContext';
 import FullPageLoader from '../../components/common/FullPageLoader';
 import { ParkingSlot, ParkingSlotStatus, ParkingSlotType, UserRole } from '../../types';
-import { Search, LocateFixed, Car, SlidersHorizontal, Loader2, MapPin, X, Bike, Truck, Video, Shield, Building2, KeyRound, Sparkles, Star, Check, Navigation, ArrowRight, Plus, Edit, Trash2, AlertTriangle, Info, CircleDollarSign, CalendarClock, History, Minus } from 'lucide-react';
+import { Search, LocateFixed, Car, SlidersHorizontal, Loader2, MapPin, X, Bike, Truck, Video, Shield, Building2, KeyRound, Sparkles, Star, Check, Navigation, ArrowRight, Plus, Edit, Trash2, AlertTriangle, Info, CircleDollarSign, CalendarClock, History, Minus, Clock } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { getVehicleMarkerIcon, getHighlightIcon, searchedLocationIcon, userLocationIcon } from '../../utils/mapHelpers';
 import { geocodeWithRateLimit } from '../../utils/geocoding';
@@ -966,11 +966,13 @@ const MapPage: React.FC = () => {
                                     </div>
 
                                     <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-3 flex flex-col items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
-                                        <div className="mb-1 p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full text-amber-500">
-                                            <Star size={20} className="fill-current" />
+                                        <div className="mb-1 p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full text-purple-600 dark:text-purple-400">
+                                            <Clock size={20} />
                                         </div>
-                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Rating</span>
-                                        <span className="font-bold text-slate-800 dark:text-white text-sm mt-0.5">{selectedSlot.rating || 4.5} <span className="text-[10px] text-slate-400 font-normal">({selectedSlot.reviews || 12})</span></span>
+                                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Hours</span>
+                                        <span className="font-bold text-slate-800 dark:text-white text-sm mt-0.5">{selectedSlot.operatingHours}</span>
+                                    </div>
+
                                     </div>
                                 </div>
 
@@ -1018,9 +1020,8 @@ const MapPage: React.FC = () => {
                                 </div>
                             </div>
                         )}
-                    </BottomSheet>
-                </div>
-            </div>
+            </BottomSheet>
+
             <SlotEditModal isOpen={isSlotEditModalOpen} onClose={() => setIsSlotEditModalOpen(false)} onSave={handleSaveSlot} slot={slotToEdit} userLocation={userLocation} />
             <ConfirmationModal isOpen={isConfirmDeleteOpen} onClose={() => setIsConfirmDeleteOpen(false)} onConfirm={confirmDeleteSlot} title="Delete Slot" message="Are you sure you want to delete this parking slot? This action cannot be undone." confirmButtonText="Delete" confirmButtonVariant="danger" />
         </div>

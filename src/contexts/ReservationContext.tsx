@@ -29,7 +29,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
   const user = authContext?.user || null;
 
   useEffect(() => {
-    const fetchWithTimeout = async (promise: Promise<any>, timeoutMs = 8000) => {
+    const fetchWithTimeout = async (promise: Promise<any>, timeoutMs = 12000) => { // Increased from 8s to 12s
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Database query timeout')), timeoutMs)
       );
@@ -37,71 +37,81 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     const fetchData = async () => {
+      const MAX_RETRIES = 2;
       setLoading(true);
-      try {
-        // Fetch parking lots from Supabase with timeout
-        const lotsPromise = supabase.from('parking_lots').select('*');
-        const { data: lotsData, error: lotsError } = await fetchWithTimeout(lotsPromise) as any;
 
-        if (lotsError) {
-          console.error('Error fetching parking lots:', lotsError);
-          setSlots([]); // Empty state on error
-        } else if (lotsData) {
-          // Map Supabase data to ParkingSlot format
-          const mapped: ParkingSlot[] = lotsData.map(lot => ({
-            id: lot.id,
-            name: lot.name,
-            location: [lot.latitude, lot.longitude] as [number, number],
-            address: lot.address || lot.name,
-            status: (Object.values(ParkingSlotStatus).includes(lot.status as ParkingSlotStatus) ? lot.status : ParkingSlotStatus.AVAILABLE) as ParkingSlotStatus,
-            type: (lot.vehicle_type || 'Car') as any,
-            pricePerHour: lot.price_per_hour || 0,
-            features: lot.features || [],
-            operatingHours: lot.operating_hours || '24/7',
-            rating: lot.rating || 0,
-            reviews: lot.total_reviews || 0,
-          }));
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          // Calculate timeout with exponential backoff
+          const timeout = 12000 * Math.pow(1.5, attempt);
 
-          // 🔍 DEBUG: Log fetched data
-          console.log('🔌 ReservationContext: Fetched lots', {
-            raw: lotsData.length,
-            mapped: mapped.length,
-            sample: mapped[0]
-          });
+          // Fetch parking lots from Supabase with timeout
+          const lotsPromise = supabase.from('parking_lots').select('*');
+          const { data: lotsData, error: lotsError } = await fetchWithTimeout(lotsPromise, timeout) as any;
 
-          setSlots(mapped);
+          if (lotsError) {
+            throw lotsError;
+          }
+
+          if (lotsData) {
+            // Map Supabase data to ParkingSlot format
+            const mapped: ParkingSlot[] = lotsData.map(lot => ({
+              id: lot.id,
+              name: lot.name,
+              location: [lot.latitude, lot.longitude] as [number, number],
+              address: lot.address || lot.name,
+              status: (Object.values(ParkingSlotStatus).includes(lot.status as ParkingSlotStatus) ? lot.status : ParkingSlotStatus.AVAILABLE) as ParkingSlotStatus,
+              type: (lot.vehicle_type || 'Car') as any,
+              pricePerHour: lot.price_per_hour || 0,
+              features: lot.features || [],
+              operatingHours: lot.operating_hours || '24/7',
+            }));
+
+            setSlots(mapped);
+          }
+
+          // Fetch reservations from Supabase with timeout
+          const resPromise = supabase.from('reservations').select('*');
+          const { data: resData, error: resError } = await fetchWithTimeout(resPromise, timeout) as any;
+
+          if (resError) {
+            throw resError;
+          }
+
+          if (resData) {
+            // Map Supabase data to Reservation format
+            const mappedRes: Reservation[] = resData.map(res => ({
+              id: res.id,
+              userId: res.user_id,
+              slotId: res.parking_lot_id,
+              startTime: new Date(res.start_time),
+              endTime: new Date(res.end_time),
+              totalCost: parseFloat(res.total_cost),
+              status: res.status as ReservationStatus,
+              paymentMethod: res.payment_method as PaymentMethod,
+            }));
+            setReservations(mappedRes);
+          }
+
+          // Success - exit retry loop
+          break;
+        } catch (error: any) {
+          console.error(`[DB] Fetch data failed (attempt ${attempt + 1}/${MAX_RETRIES + 1}):`, error);
+
+          if (attempt === MAX_RETRIES) {
+            // Final attempt failed - set empty state but don't crash
+            console.error('[DB] All retry attempts failed, using empty state');
+            setSlots([]);
+            setReservations([]);
+          } else {
+            // Wait before retry with exponential backoff
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+          }
         }
-
-        // Fetch reservations from Supabase with timeout
-        const resPromise = supabase.from('reservations').select('*');
-        const { data: resData, error: resError } = await fetchWithTimeout(resPromise) as any;
-
-        if (resError) {
-          console.error('Error fetching reservations:', resError);
-          setReservations([]); // Empty state on error
-        } else if (resData) {
-          // Map Supabase data to Reservation format
-          const mappedRes: Reservation[] = resData.map(res => ({
-            id: res.id,
-            userId: res.user_id,
-            slotId: res.parking_lot_id,
-            startTime: new Date(res.start_time),
-            endTime: new Date(res.end_time),
-            totalCost: parseFloat(res.total_cost),
-            status: res.status as ReservationStatus,
-            paymentMethod: res.payment_method as PaymentMethod,
-          }));
-          setReservations(mappedRes);
-        }
-      } catch (error) {
-        console.error('Unexpected error fetching data:', error);
-        // Set empty state on error
-        setSlots([]);
-        setReservations([]);
-      } finally {
-        // ALWAYS stop loading, even on timeout/error
-        setLoading(false);
       }
+
+      // ALWAYS stop loading, even on timeout/error
+      setLoading(false);
     };
 
     fetchData();
@@ -222,8 +232,6 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
         price_per_hour: slot.pricePerHour,
         features: slot.features || [],
         operating_hours: slot.operatingHours || '24/7',
-        rating: slot.rating || 0,
-        total_reviews: slot.reviews || 0,
       });
 
       if (error) {
@@ -254,8 +262,6 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
           price_per_hour: slot.pricePerHour,
           features: slot.features || [],
           operating_hours: slot.operatingHours || '24/7',
-          rating: slot.rating || 0,
-          total_reviews: slot.reviews || 0,
         })
         .eq('id', slot.id);
 

@@ -61,40 +61,74 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     mounted.current = true;
+
     const initAuth = async () => {
-      try {
-        // Race between auth check and 10s timeout
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
-        );
+      const MAX_RETRIES = 2;
+      const AUTH_TIMEOUT = 10000; // Reduced from 15s to 10s to fit within loader timeout
 
-        const sessionPromise = supabase.auth.getSession();
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          // Calculate timeout with exponential backoff
+          const timeout = AUTH_TIMEOUT * Math.pow(1.5, attempt);
 
-        const { data: { session } } = await Promise.race([
-          sessionPromise,
-          timeoutPromise
-        ]) as any;
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Auth initialization timeout')), timeout)
+          );
 
-        if (!mounted.current) return;
+          const sessionPromise = supabase.auth.getSession();
 
-        setSession(session);
-        if (session?.user) {
-          const profile = await fetchUserProfile(session.user.id, session.user.email!);
-          if (mounted.current) {
-            setUser(profile);
+          const { data: { session } } = await Promise.race([
+            sessionPromise,
+            timeoutPromise
+          ]) as any;
+
+          if (!mounted.current) return;
+
+          setSession(session);
+          if (session?.user) {
+            const profile = await fetchUserProfile(session.user.id, session.user.email!);
+            if (mounted.current) {
+              setUser(profile);
+            }
+          }
+
+          // Success - exit retry loop
+          break;
+        } catch (error) {
+          console.error(`Auth initialization failed (attempt ${attempt + 1}/${MAX_RETRIES + 1}):`, error);
+
+          if (attempt === MAX_RETRIES) {
+            // Final attempt failed
+            if (mounted.current) {
+              // Check if there's a valid cached session before forcing logout
+              const cachedSession = localStorage.getItem(`sb-${new URL(import.meta.env.VITE_SUPABASE_URL || '').hostname}-auth-token`);
+
+              if (!cachedSession) {
+                // Only force cleanup if no cached session exists
+                try {
+                  await supabase.auth.signOut();
+                } catch (signOutError) {
+                  console.error('Error during forced sign out:', signOutError);
+                }
+
+                // Clear all possible session storage keys
+                const storageKeys = Object.keys(localStorage);
+                storageKeys.forEach(key => {
+                  if (key.includes('supabase') || key.includes('sb-')) {
+                    localStorage.removeItem(key);
+                  }
+                });
+              }
+            }
+          } else {
+            // Wait before retry with exponential backoff
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
           }
         }
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
-        if (mounted.current) {
-          // Force cleanup on timeout/error to prevent stuck loading state
-          await supabase.auth.signOut();
-          localStorage.removeItem('sb-' + import.meta.env.VITE_SUPABASE_URL + '-auth-token');
-        }
-      } finally {
-        if (mounted.current) {
-          setLoading(false);
-        }
+      }
+
+      if (mounted.current) {
+        setLoading(false);
       }
     };
 
@@ -103,8 +137,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted.current) return;
+
+      console.log('[AUTH] State change:', event);
+
       setSession(session);
       if (session?.user) {
         const profile = await fetchUserProfile(session.user.id, session.user.email!);
@@ -140,8 +177,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    try {
+      // Save current route for redirect after re-login
+      const currentPath = window.location.hash.replace('#', '');
+      if (currentPath && currentPath !== '/login' && currentPath !== '/signup') {
+        localStorage.setItem('park-eazy-redirect-after-login', currentPath);
+      }
+
+      console.log('[AUTH] Logging out...');
+
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error('[AUTH] Logout error:', error);
+        // Continue with cleanup even if signOut fails
+      }
+
+      // Clear user state
+      setUser(null);
+      setSession(null);
+
+      // Clear all Supabase-related items from localStorage
+      const storageKeys = Object.keys(localStorage);
+      storageKeys.forEach(key => {
+        if (key.includes('supabase') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      console.log('[AUTH] Logout complete');
+    } catch (error) {
+      console.error('[AUTH] Unexpected logout error:', error);
+      // Force cleanup even on error
+      setUser(null);
+      setSession(null);
+    }
   }, []);
 
   const updateUser = useCallback(async (updatedData: Partial<User>) => {

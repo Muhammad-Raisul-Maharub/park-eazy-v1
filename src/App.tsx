@@ -28,7 +28,6 @@ import ManageReservationsPage from './pages/admin/ManageReservationsPage';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 import ManageUsersPage from './pages/superadmin/ManageUsersPage';
 import ManageAdminsPage from './pages/superadmin/ManageAdminsPage';
-import CurrencyManagerPage from './pages/superadmin/CurrencyManagerPage';
 import SystemLogsPage from './pages/superadmin/SystemLogsPage';
 import FullPageLoader from './components/common/FullPageLoader';
 import { UserRole } from './types';
@@ -54,6 +53,15 @@ const AppRoutes: React.FC = () => {
   }
 
   if (!user) {
+    // Save current route for post-login redirect if not already on auth pages
+    const currentPath = window.location.hash.replace('#', '');
+    if (currentPath && currentPath !== '/login' && currentPath !== '/signup' && currentPath !== '/forgot-password') {
+      const savedRoute = localStorage.getItem('park-eazy-redirect-after-login');
+      if (!savedRoute) {
+        localStorage.setItem('park-eazy-redirect-after-login', currentPath);
+      }
+    }
+
     return (
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -109,7 +117,6 @@ const AppRoutes: React.FC = () => {
           <Route path="/manage-admins" element={<ManageAdminsPage />} />
           <Route path="/manage-parkings" element={<ManageParkingsPage />} />
           <Route path="/analytics" element={<SuperAdminAnalyticsPage />} />
-          <Route path="/currency" element={<CurrencyManagerPage />} />
           <Route path="/logs" element={<SystemLogsPage />} />
           <Route path="/profile" element={<SuperAdminProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

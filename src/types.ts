@@ -35,8 +35,6 @@ export interface ParkingSlot {
   pricePerHour: number;
   features?: string[];
   operatingHours?: string;
-  rating?: number;
-  reviews?: number;
 }
 
 export enum ReservationStatus {

@@ -22,6 +22,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Fetch users when the provider mounts or user role changes
     useEffect(() => {
+        const fetchWithTimeout = async (promise: Promise<any>, timeoutMs = 12000) => {
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Database query timeout')), timeoutMs)
+            );
+            return Promise.race([promise, timeoutPromise]);
+        };
+
         const fetchUsers = async () => {
             // Only Admins and Super Admins can see the user list
             if (!currentUser || (currentUser.role !== UserRole.ADMIN && currentUser.role !== UserRole.SUPER_ADMIN)) {
@@ -29,29 +36,50 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 return;
             }
 
+            const MAX_RETRIES = 2;
             setLoading(true);
-            try {
-                const { data, error } = await supabase
-                    .from('user_profiles')
-                    .select('*');
 
-                if (error) {
-                    console.error('Error fetching users:', error);
-                    // Don't throw, just show empty list or handle gracefully
-                } else if (data) {
-                    const mappedUsers: User[] = data.map(u => ({
-                        id: u.user_id,
-                        name: u.name || u.email?.split('@')[0] || 'Unknown',
-                        email: u.email || '',
-                        role: u.role as UserRole,
-                    }));
-                    setUsers(mappedUsers);
+            for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+                try {
+                    const timeout = 12000 * Math.pow(1.5, attempt);
+
+                    const queryPromise = supabase
+                        .from('user_profiles')
+                        .select('*');
+
+                    const { data, error } = await fetchWithTimeout(queryPromise, timeout) as any;
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    if (data) {
+                        const mappedUsers: User[] = data.map(u => ({
+                            id: u.user_id,
+                            name: u.name || u.email?.split('@')[0] || 'Unknown',
+                            email: u.email || '',
+                            role: u.role as UserRole,
+                        }));
+                        setUsers(mappedUsers);
+                    }
+
+                    // Success - exit retry loop
+                    break;
+                } catch (err: any) {
+                    console.error(`[DB] Fetch users failed (attempt ${attempt + 1}/${MAX_RETRIES + 1}):`, err);
+
+                    if (attempt === MAX_RETRIES) {
+                        // Final attempt failed
+                        console.error('[DB] All retry attempts failed for users, using empty state');
+                        setUsers([]);
+                    } else {
+                        // Wait before retry with exponential backoff
+                        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+                    }
                 }
-            } catch (err) {
-                console.error('Unexpected error fetching users:', err);
-            } finally {
-                setLoading(false);
             }
+
+            setLoading(false);
         };
 
         fetchUsers();

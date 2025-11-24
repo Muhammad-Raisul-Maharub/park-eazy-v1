@@ -13,29 +13,28 @@ interface SuperAdminLayoutProps {
 }
 
 const navLinks = [
-    { name: 'Dashboard', path: '/', icon: Shield },
-    { name: 'Find Parking', path: '/map', icon: MapPin },
-    { name: 'Manage Users', path: '/manage-users', icon: Users },
-    { name: 'Manage Admins', path: '/manage-admins', icon: UserCog },
-    { name: 'Manage Parkings', path: '/manage-parkings', icon: ParkingSquare },
-    { name: 'Analytics', path: '/analytics', icon: LineChart },
-    { name: 'Currency', path: '/currency', icon: DollarSign },
-    { name: 'System Logs', path: '/logs', icon: Terminal },
-    { name: 'Profile', path: '/profile', icon: UserIcon },
+  { name: 'Dashboard', path: '/', icon: Shield },
+  { name: 'Find Parking', path: '/map', icon: MapPin },
+  { name: 'Manage Users', path: '/manage-users', icon: Users },
+  { name: 'Manage Admins', path: '/manage-admins', icon: UserCog },
+  { name: 'Manage Parkings', path: '/manage-parkings', icon: ParkingSquare },
+  { name: 'Analytics', path: '/analytics', icon: LineChart },
+  { name: 'System Logs', path: '/logs', icon: Terminal },
+  { name: 'Profile', path: '/profile', icon: UserIcon },
 ];
 
 const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) => {
   const authContext = useContext(AuthContext);
   const location = useLocation();
-  
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  
+
   if (!authContext || !authContext.user) {
     return <FullPageLoader />;
   }
   const { user, logout } = authContext;
-  
+
   const isFullWidthPage = location.pathname === '/map';
 
   return (
@@ -53,9 +52,9 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ children }) => {
         activeBg="bg-primary text-white"
         activeTextColor="text-white"
       />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header 
+        <Header
           user={user}
           logout={logout}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
