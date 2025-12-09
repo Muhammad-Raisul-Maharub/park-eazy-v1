@@ -25,7 +25,7 @@ export const searchLocation = async (
   }
 ): Promise<GeocodedLocation[]> => {
   const cacheKey = `${query}-${options?.countryCode || 'bd'}-${options?.limit || 5}`;
-  
+
   if (locationCache.has(cacheKey)) {
     return locationCache.get(cacheKey)!;
   }
@@ -45,35 +45,35 @@ export const searchLocation = async (
   }
 
   try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?${params}`,
-        {
-          headers: {
-            'User-Agent': 'Park-Eazy-App/1.0', // Required by Nominatim policy
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Geocoding failed with status: ${response.status}`);
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?${params}`,
+      {
+        headers: {
+          'User-Agent': 'Park-Eazy-App/1.0', // Required by Nominatim policy
+        },
       }
+    );
 
-      const data = await response.json();
-      
-      const results = data.map((item: any) => ({
-        name: item.name || item.display_name.split(',')[0],
-        displayName: item.display_name,
-        lat: parseFloat(item.lat),
-        lon: parseFloat(item.lon),
-        type: item.type,
-        address: item.address,
-      }));
+    if (!response.ok) {
+      throw new Error(`Geocoding failed with status: ${response.status}`);
+    }
 
-      locationCache.set(cacheKey, results);
-      return results;
+    const data = await response.json();
+
+    const results = data.map((item: any) => ({
+      name: item.name || item.display_name.split(',')[0],
+      displayName: item.display_name,
+      lat: parseFloat(item.lat),
+      lon: parseFloat(item.lon),
+      type: item.type,
+      address: item.address,
+    }));
+
+    locationCache.set(cacheKey, results);
+    return results;
   } catch (error) {
-      console.error("Geocoding error:", error);
-      return [];
+    console.error("Geocoding error:", error);
+    return [];
   }
 };
 
@@ -91,18 +91,40 @@ export const geocodeWithRateLimit = async (
   const cacheKey = `${query}-${options?.countryCode || 'bd'}-${options?.limit || 5}`;
   // Return cached result immediately if available, bypassing rate limit
   if (locationCache.has(cacheKey)) {
-      return locationCache.get(cacheKey)!;
+    return locationCache.get(cacheKey)!;
   }
 
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
-  
+
   if (timeSinceLastRequest < MIN_INTERVAL) {
-    await new Promise(resolve => 
+    await new Promise(resolve =>
       setTimeout(resolve, MIN_INTERVAL - timeSinceLastRequest)
     );
   }
-  
+
+  lastRequestTime = Date.now();
   lastRequestTime = Date.now();
   return searchLocation(query, options);
+};
+
+export const reverseGeocodeLocation = async (lat: number, lon: number): Promise<string> => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'Park-Eazy-App/1.0',
+        },
+      }
+    );
+
+    if (!response.ok) throw new Error('Reverse geocoding failed');
+
+    const data = await response.json();
+    return data.display_name || 'Unknown Location';
+  } catch (error) {
+    console.error('Reverse geocoding error:', error);
+    return 'Location unavailable';
+  }
 };

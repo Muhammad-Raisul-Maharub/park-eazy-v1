@@ -13,7 +13,7 @@ import { ParkingSlot, ParkingSlotStatus, ParkingSlotType, UserRole } from '../..
 import { Search, LocateFixed, Car, SlidersHorizontal, Loader2, MapPin, X, Bike, Truck, Video, Shield, Building2, KeyRound, Sparkles, Star, Check, Navigation, ArrowRight, Plus, Edit, Trash2, AlertTriangle, Info, CircleDollarSign, CalendarClock, History, Minus, Clock } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { getVehicleMarkerIcon, getHighlightIcon, searchedLocationIcon, userLocationIcon } from '../../utils/mapHelpers';
-import { geocodeWithRateLimit } from '../../utils/geocoding';
+import { geocodeWithRateLimit, reverseGeocodeLocation } from '../../utils/geocoding';
 import { formatDistance } from '../../utils/formatters';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getUserParkingHistory, UserParkingHistory, getGeneralTip } from '../../utils/recommendations';
@@ -216,8 +216,9 @@ const MapPage: React.FC = () => {
 
     const reverseGeocode = useCallback(async (lat: number, lon: number) => {
         try {
-            const results = await geocodeWithRateLimit(`${lat}, ${lon}`);
-            setUserAddress(results[0]?.displayName?.split(',').slice(0, 2).join(',') || 'Unknown Location');
+            const address = await reverseGeocodeLocation(lat, lon);
+            // Show up to 3 parts of the address for better context
+            setUserAddress(address.split(',').slice(0, 3).join(',') || 'Unknown Location');
         } catch (error) { console.error(error); setUserAddress('Could not fetch address'); }
     }, []);
 
