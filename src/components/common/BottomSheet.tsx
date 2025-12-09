@@ -34,7 +34,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       document.body.style.overflow = '';
     };
   }, [isOpen, initialSnap]);
-  
+
   const triggerHaptic = () => {
     if ('vibrate' in navigator) {
       navigator.vibrate(10);
@@ -45,10 +45,10 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     setIsDragging(true);
     startY.current = clientY;
     if (sheetRef.current) {
-        startHeight.current = sheetRef.current.offsetHeight;
-        sheetRef.current.style.transition = 'none';
+      startHeight.current = sheetRef.current.offsetHeight;
+      sheetRef.current.style.transition = 'none';
     }
-    if(contentRef.current) contentRef.current.style.overflow = 'hidden';
+    if (contentRef.current) contentRef.current.style.overflow = 'hidden';
   };
 
   const onDragMove = (clientY: number) => {
@@ -63,11 +63,11 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     setIsDragging(false);
 
     sheetRef.current.style.transition = '';
-    if(contentRef.current) contentRef.current.style.overflow = '';
+    if (contentRef.current) contentRef.current.style.overflow = '';
 
     const currentHeight = sheetRef.current.offsetHeight;
     const windowHeight = window.innerHeight;
-    
+
     const closestSnapIndex = snapPoints.reduce((closestIndex, snapPoint, index) => {
       const snapHeight = (snapPoint / 100) * windowHeight;
       const closestSnapHeight = (snapPoints[closestIndex] / 100) * windowHeight;
@@ -76,25 +76,25 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
     const deltaY = startY.current - clientY;
     const threshold = 50;
-    
+
     if (deltaY < -threshold) { // Swiped down
-        if (currentSnap > 0) {
-            setCurrentSnap(currentSnap - 1);
-            triggerHaptic();
-        } else {
-            onClose();
-        }
-    } else if (deltaY > threshold && currentSnap < snapPoints.length - 1) { // Swiped up
-        setCurrentSnap(currentSnap + 1);
+      if (currentSnap > 0) {
+        setCurrentSnap(currentSnap - 1);
         triggerHaptic();
+      } else {
+        onClose();
+      }
+    } else if (deltaY > threshold && currentSnap < snapPoints.length - 1) { // Swiped up
+      setCurrentSnap(currentSnap + 1);
+      triggerHaptic();
     } else {
-        setCurrentSnap(closestSnapIndex);
-        if (closestSnapIndex !== currentSnap) triggerHaptic();
+      setCurrentSnap(closestSnapIndex);
+      if (closestSnapIndex !== currentSnap) triggerHaptic();
     }
 
     sheetRef.current.style.height = '';
   };
-  
+
   // Mouse Events
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => onDragMove(e.clientY);
@@ -120,11 +120,11 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       <div
         ref={sheetRef}
         className="fixed left-0 right-0 bottom-0 bg-white dark:bg-slate-800 rounded-t-3xl shadow-2xl z-[1002] flex flex-col"
-        style={{ 
-            height: height, 
-            transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
-            pointerEvents: isOpen ? 'auto' : 'none',
-            transition: 'height 0.35s cubic-bezier(0.32, 0.72, 0, 1), transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)'
+        style={{
+          height: height,
+          transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
+          pointerEvents: isOpen ? 'auto' : 'none',
+          transition: 'height 0.35s cubic-bezier(0.32, 0.72, 0, 1), transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)'
         }}
       >
         <div
@@ -153,4 +153,5 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     </>
   );
 };
+
 export default BottomSheet;

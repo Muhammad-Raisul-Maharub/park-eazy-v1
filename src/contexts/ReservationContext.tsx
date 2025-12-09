@@ -131,32 +131,58 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
   const addReservation = useCallback(async (slot: ParkingSlot, startTime: Date, endTime: Date, paymentMethod: PaymentMethod): Promise<Reservation> => {
     if (!user) throw new Error("User not logged in");
 
-    // Simulate API call
-    await new Promise(res => setTimeout(res, 500));
-
     const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
 
     if (durationHours <= 0) {
       throw new Error("Invalid reservation duration.");
     }
 
-    const newReservation: Reservation = {
-      id: `res-${Date.now()}`,
-      userId: user.id,
-      slotId: slot.id,
-      startTime,
-      endTime,
-      totalCost: slot.pricePerHour * durationHours,
-      status: ReservationStatus.ACTIVE,
-      paymentMethod,
-    };
+    const totalCost = slot.pricePerHour * durationHours;
 
-    setReservations(prev => [...prev, newReservation]);
-    setSlots(prevSlots => prevSlots.map(s =>
-      s.id === slot.id ? { ...s, status: ParkingSlotStatus.RESERVED } : s
-    ));
+    try {
+      const { data, error } = await supabase
+        .from('reservations')
+        .insert({
+          user_id: user.id,
+          parking_lot_id: slot.id,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          total_cost: totalCost,
+          status: ReservationStatus.ACTIVE,
+          payment_method: paymentMethod
+        })
+        .select()
+        .single();
 
-    return newReservation;
+      if (error) throw error;
+
+      const newReservation: Reservation = {
+        id: data.id,
+        userId: data.user_id,
+        slotId: data.parking_lot_id,
+        startTime: new Date(data.start_time),
+        endTime: new Date(data.end_time),
+        totalCost: parseFloat(data.total_cost),
+        status: data.status as ReservationStatus,
+        paymentMethod: data.payment_method as PaymentMethod,
+      };
+
+      setReservations(prev => [...prev, newReservation]);
+      setSlots(prevSlots => prevSlots.map(s =>
+        s.id === slot.id ? { ...s, status: ParkingSlotStatus.RESERVED } : s
+      ));
+
+      // Also update the slot status in DB
+      await supabase
+        .from('parking_lots')
+        .update({ status: ParkingSlotStatus.RESERVED })
+        .eq('id', slot.id);
+
+      return newReservation;
+    } catch (error) {
+      console.error('Error creating reservation:', error);
+      throw error;
+    }
   }, [user]);
 
   const extendReservation = useCallback(async (reservationId: string, hoursToAdd: number, paymentMethod: PaymentMethod): Promise<void> => {
@@ -174,23 +200,37 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
       throw new Error("Associated slot not found");
     }
 
-    // Simulate API call
-    await new Promise(res => setTimeout(res, 300));
+    try {
+      const additionalCost = slot.pricePerHour * hoursToAdd;
+      const newEndTime = new Date(reservation.endTime.getTime() + hoursToAdd * 60 * 60 * 1000);
+      const newTotalCost = reservation.totalCost + additionalCost;
 
-    setReservations(prevReservations => {
-      return prevReservations.map(r => {
-        if (r.id === reservationId) {
-          const additionalCost = slot.pricePerHour * hoursToAdd;
-          const newEndTime = new Date(r.endTime.getTime() + hoursToAdd * 60 * 60 * 1000);
-          return {
-            ...r,
-            endTime: newEndTime,
-            totalCost: r.totalCost + additionalCost,
-          };
-        }
-        return r;
+      const { error } = await supabase
+        .from('reservations')
+        .update({
+          end_time: newEndTime.toISOString(),
+          total_cost: newTotalCost
+        })
+        .eq('id', reservationId);
+
+      if (error) throw error;
+
+      setReservations(prevReservations => {
+        return prevReservations.map(r => {
+          if (r.id === reservationId) {
+            return {
+              ...r,
+              endTime: newEndTime,
+              totalCost: newTotalCost,
+            };
+          }
+          return r;
+        });
       });
-    });
+    } catch (error) {
+      console.error('Error extending reservation:', error);
+      throw error;
+    }
   }, [reservations, slots]);
 
   const endReservation = useCallback(async (reservationId: string): Promise<void> => {
@@ -199,22 +239,41 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
       throw new Error("Reservation not found");
     }
 
-    // Simulate API call to the backend
-    await new Promise(res => setTimeout(res, 300));
+    try {
+      // Update reservation status
+      const { error: resError } = await supabase
+        .from('reservations')
+        .update({
+          status: ReservationStatus.COMPLETED,
+          end_time: new Date().toISOString()
+        })
+        .eq('id', reservationId);
 
-    // Update reservations: set status to Completed and endTime to now
-    setReservations(prev =>
-      prev.map(r =>
-        r.id === reservationId ? { ...r, status: ReservationStatus.COMPLETED, endTime: new Date() } : r
-      )
-    );
+      if (resError) throw resError;
 
-    // Update slot: set status to Available
-    setSlots(prev =>
-      prev.map(s =>
-        s.id === reservation.slotId ? { ...s, status: ParkingSlotStatus.AVAILABLE } : s
-      )
-    );
+      // Update slot status to AVAILABLE
+      const { error: slotError } = await supabase
+        .from('parking_lots')
+        .update({ status: ParkingSlotStatus.AVAILABLE })
+        .eq('id', reservation.slotId);
+
+      if (slotError) throw slotError;
+
+      setReservations(prev =>
+        prev.map(r =>
+          r.id === reservationId ? { ...r, status: ReservationStatus.COMPLETED, endTime: new Date() } : r
+        )
+      );
+
+      setSlots(prev =>
+        prev.map(s =>
+          s.id === reservation.slotId ? { ...s, status: ParkingSlotStatus.AVAILABLE } : s
+        )
+      );
+    } catch (error) {
+      console.error('Error ending reservation:', error);
+      throw error;
+    }
   }, [reservations]);
 
   // CRUD for Slots

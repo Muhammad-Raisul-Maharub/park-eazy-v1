@@ -3,6 +3,8 @@ import React, { useContext, useState, useEffect, useMemo, useRef, useCallback } 
 import { MapContainer, TileLayer, useMap, Marker, Popup, useMapEvents, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { ReservationContext } from '../../contexts/ReservationContext';
 import { AuthContext } from '../../contexts/AuthContext';
 import { LogContext } from '../../contexts/LogContext';
@@ -18,6 +20,9 @@ import { getUserParkingHistory, UserParkingHistory, getGeneralTip } from '../../
 import { BottomSheet } from '../../components/common/BottomSheet';
 import SlotEditModal from '../../components/modals/SlotEditModal';
 import ConfirmationModal from '../../components/modals/ConfirmationModal';
+import ParkingMarkers from '../../components/map/ParkingMarkers';
+import MapInstanceProvider from '../../components/map/MapInstanceProvider';
+import MapEventsHandler from '../../components/map/MapEventsHandler';
 
 // ========================================
 
@@ -81,103 +86,7 @@ const FilterChip = React.memo(({ label, isActive, onClick, icon }: { label: stri
     </button>
 ));
 
-const ParkingMarkers: React.FC<{ slots: ParkingSlot[], onMarkerClick: (slot: ParkingSlot) => void }> = ({ slots, onMarkerClick }) => {
-    const map = useMap();
-    const markerClusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
 
-    useEffect(() => {
-        if (!map || slots.length === 0) return;
-
-        // Remove existing cluster group if it exists
-        if (markerClusterGroupRef.current) {
-            map.removeLayer(markerClusterGroupRef.current);
-            markerClusterGroupRef.current = null;
-        }
-
-        const iconCreateFunction = (cluster: L.MarkerClusterGroup.MarkerCluster) => {
-            const childCount = cluster.getChildCount();
-            let c = ' marker-cluster-';
-            if (childCount < 10) { c += 'small'; }
-            else if (childCount < 100) { c += 'medium'; }
-            else { c += 'large'; }
-
-            return L.divIcon({
-                html: `<div style="position: relative;"><span>${childCount}</span></div>`,
-                className: `marker-cluster ${c}`,
-                iconSize: new L.Point(40, 40)
-            });
-        };
-
-        const mcg = L.markerClusterGroup({
-            iconCreateFunction,
-            maxClusterRadius: 30,
-            spiderfyOnMaxZoom: true,
-            showCoverageOnHover: false,
-            zoomToBoundsOnClick: true,
-            spiderfyDistanceMultiplier: 2,
-            animate: true
-        });
-
-        const markers = slots.map(slot => {
-            return L.marker(slot.location, {
-                icon: getVehicleMarkerIcon(slot.status, slot.type, { isNew: false }, slot.id),
-                title: slot.name,
-                riseOnHover: true,
-                // @ts-ignore
-                slotData: slot
-            });
-        });
-
-        if (markers.length > 0) {
-            (mcg as any).addLayers(markers);
-        }
-        mcg.on('click', (e) => {
-            L.DomEvent.stopPropagation(e);
-            const layer = e.layer as any;
-            if (layer.options?.slotData) {
-                onMarkerClick(layer.options.slotData);
-            }
-        });
-
-        map.addLayer(mcg);
-        markerClusterGroupRef.current = mcg;
-
-        return () => {
-            if (markerClusterGroupRef.current && map.hasLayer(markerClusterGroupRef.current)) {
-                map.removeLayer(markerClusterGroupRef.current);
-            }
-        };
-    }, [map, slots]);
-
-    return null;
-};
-
-const MapInstanceProvider: React.FC<{ setMap: (map: L.Map) => void, onMoveStart: () => void }> = ({ setMap, onMoveStart }) => {
-    const map = useMap();
-    useEffect(() => { setMap(map); }, [map]);
-    useMapEvents({
-        dragstart: onMoveStart,
-    });
-    return null;
-};
-
-const MapEventsHandler: React.FC<{ onMapClick: (latlng: L.LatLng) => void }> = ({ onMapClick }) => {
-    useMapEvents({
-        click(e) {
-            const target = e.originalEvent.target as HTMLElement;
-            if (target.closest('.leaflet-marker-icon') ||
-                target.closest('.leaflet-popup-content-wrapper') ||
-                target.closest('.leaflet-control-container') ||
-                target.closest('button') ||
-                target.closest('.map-controls-container') ||
-                target.closest('.bottom-sheet-container')) {
-                return;
-            }
-            onMapClick(e.latlng);
-        },
-    });
-    return null;
-};
 
 const MapPage: React.FC = () => {
     const reservationContext = useContext(ReservationContext);
@@ -675,7 +584,7 @@ const MapPage: React.FC = () => {
                     <MapEventsHandler onMapClick={handleMapClick} />
                     <ParkingMarkers slots={filteredSlots} onMarkerClick={handleMarkerClick} />
                     {userLocation && <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999}><Popup><div className="text-center font-sans"><p className="font-semibold text-blue-600">You are here</p><p className="text-xs text-slate-500 mt-1">Accurate to {accuracy?.toFixed(0)}m</p></div></Popup></Marker>}
-                    {userLocation && <Circle center={userLocation} radius={20} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.15, weight: 1.5, dashArray: '5, 5', stroke: true }} />}
+                    {userLocation && <Circle center={userLocation} radius={accuracy || 20} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.15, weight: 1.5, dashArray: '5, 5', stroke: true }} />}
                     {searchedLocation && <Marker key={`search-${searchedLocation.lat}-${searchedLocation.lng}`} position={searchedLocation} icon={searchedLocationIcon()}><Popup>Searched Location</Popup></Marker>}
                     {selectedSlot && <Marker position={selectedSlot.location} icon={getHighlightIcon(selectedSlot)} zIndexOffset={1000} />}
                 </MapContainer>
@@ -973,7 +882,6 @@ const MapPage: React.FC = () => {
                                         <span className="font-bold text-slate-800 dark:text-white text-sm mt-0.5">{selectedSlot.operatingHours}</span>
                                     </div>
 
-                                    </div>
                                 </div>
 
                                 <div className="mb-6">
@@ -982,7 +890,7 @@ const MapPage: React.FC = () => {
                                         {selectedSlot.features && selectedSlot.features.length > 0 ? (
                                             selectedSlot.features.map(feature => (
                                                 <span key={feature} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm">
-                                                    {featureIconMap[feature] || <Check size={12} className="text-primary" />} {feature}
+                                                    <>{featureIconMap[feature] || <Check size={12} className="text-primary" />}{' '}{feature}</>
                                                 </span>
                                             ))
                                         ) : (
@@ -1020,10 +928,12 @@ const MapPage: React.FC = () => {
                                 </div>
                             </div>
                         )}
-            </BottomSheet>
+                    </BottomSheet>
+                </div>
 
-            <SlotEditModal isOpen={isSlotEditModalOpen} onClose={() => setIsSlotEditModalOpen(false)} onSave={handleSaveSlot} slot={slotToEdit} userLocation={userLocation} />
-            <ConfirmationModal isOpen={isConfirmDeleteOpen} onClose={() => setIsConfirmDeleteOpen(false)} onConfirm={confirmDeleteSlot} title="Delete Slot" message="Are you sure you want to delete this parking slot? This action cannot be undone." confirmButtonText="Delete" confirmButtonVariant="danger" />
+                <SlotEditModal isOpen={isSlotEditModalOpen} onClose={() => setIsSlotEditModalOpen(false)} onSave={handleSaveSlot} slot={slotToEdit} userLocation={userLocation} />
+                <ConfirmationModal isOpen={isConfirmDeleteOpen} onClose={() => setIsConfirmDeleteOpen(false)} onConfirm={confirmDeleteSlot} title="Delete Slot" message="Are you sure you want to delete this parking slot? This action cannot be undone." confirmButtonText="Delete" confirmButtonVariant="danger" />
+            </div>
         </div>
     );
 };
