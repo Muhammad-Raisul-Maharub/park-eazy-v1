@@ -2,7 +2,7 @@
 import React, { useContext, useState, useMemo, useEffect, useCallback } from 'react';
 import { ReservationContext } from '../../contexts/ReservationContext';
 import { LogContext } from '../../contexts/LogContext';
-import { Edit, Trash2, Car, Bike, Truck, SlidersHorizontal, Video, Shield, Building2, KeyRound, Search, X, MapPin } from 'lucide-react';
+import { Edit, Trash2, Car, Bike, Truck, SlidersHorizontal, Video, Shield, Building2, KeyRound, Search, X, MapPin, PlusCircle } from 'lucide-react';
 import { ParkingSlotStatus, ParkingSlot, ParkingSlotType } from '../../types';
 import SlotEditModal from '../../components/modals/SlotEditModal';
 import ConfirmationModal from '../../components/modals/ConfirmationModal';
@@ -110,6 +110,10 @@ const ManageParkingsPage: React.FC = () => {
             <div className="p-4 sm:p-6 lg:p-8 pb-4 shrink-0 space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
                     <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Manage Parking Slots</h1>
+                    <Button onClick={() => { setSelectedSlot({}); setIsModalOpen(true); }}>
+                        <PlusCircle className="w-5 h-5 mr-2" />
+                        Add New Slot
+                    </Button>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">

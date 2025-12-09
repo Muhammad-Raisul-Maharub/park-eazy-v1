@@ -140,7 +140,22 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     const totalCost = slot.pricePerHour * durationHours;
 
     try {
-      const { data, error } = await supabase
+      const fetchWithTimeout = async (promise: Promise<any>, timeoutMs = 15000) => {
+        let id = setTimeout(() => { }, 0);
+        const timeoutPromise = new Promise((_, reject) => {
+          id = setTimeout(() => reject(new Error('Reservation request timed out')), timeoutMs);
+        });
+        try {
+          const result = await Promise.race([promise, timeoutPromise]);
+          clearTimeout(id);
+          return result;
+        } catch (e) {
+          clearTimeout(id);
+          throw e;
+        }
+      };
+
+      const { data, error } = await fetchWithTimeout(supabase
         .from('reservations')
         .insert({
           user_id: user.id,
@@ -152,7 +167,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
           payment_method: paymentMethod
         })
         .select()
-        .single();
+        .single());
 
       if (error) throw error;
 
@@ -279,9 +294,8 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
   // CRUD for Slots
   const addSlot = useCallback(async (slot: ParkingSlot) => {
     try {
-      // Insert into database
-      const { error } = await supabase.from('parking_lots').insert({
-        id: slot.id,
+      // Insert into database - OMIT ID to let Supabase generate it (likely UUID)
+      const { data, error } = await supabase.from('parking_lots').insert({
         name: slot.name,
         latitude: slot.location[0],
         longitude: slot.location[1],
@@ -291,15 +305,21 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
         price_per_hour: slot.pricePerHour,
         features: slot.features || [],
         operating_hours: slot.operatingHours || '24/7',
-      });
+      }).select().single();
 
       if (error) {
         console.error('Error adding parking slot:', error);
         throw error;
       }
 
-      // Update local state
-      setSlots(prev => [...prev, slot]);
+      if (data) {
+        const newSlot: ParkingSlot = {
+          ...slot,
+          id: data.id // Use the real DB ID
+        };
+        // Update local state
+        setSlots(prev => [...prev, newSlot]);
+      }
     } catch (error) {
       console.error('Failed to add parking slot:', error);
       throw error;

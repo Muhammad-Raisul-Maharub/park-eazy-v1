@@ -89,8 +89,20 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUsers(prev => [...prev, user]);
     }, []);
 
-    const updateUser = useCallback((user: User) => {
-        setUsers(prev => prev.map(u => u.id === user.id ? user : u));
+    const updateUser = useCallback(async (user: User) => {
+        try {
+            const { error } = await supabase
+                .from('user_profiles')
+                .update({ role: user.role }) // Only update role for now as per requirements
+                .eq('user_id', user.id);
+
+            if (error) throw error;
+
+            setUsers(prev => prev.map(u => u.id === user.id ? user : u));
+        } catch (error) {
+            console.error('Failed to update user role:', error);
+            alert('Failed to update user role. Please try again.');
+        }
     }, []);
 
     const deleteUser = useCallback((userId: string) => {

@@ -60,6 +60,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    // Safety fallback: Force loading to false after 8 seconds if nothing else does
+    const safetyTimer = setTimeout(() => {
+      if (loading && mounted.current) {
+        console.warn('[AUTH] Safety timeout triggered - forcing loading false');
+        setLoading(false);
+      }
+    }, 8000);
+    return () => clearTimeout(safetyTimer);
+  }, [loading]);
+
+  useEffect(() => {
     mounted.current = true;
 
     const initAuth = async () => {

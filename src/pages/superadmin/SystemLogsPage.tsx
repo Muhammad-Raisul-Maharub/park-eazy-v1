@@ -31,6 +31,14 @@ const SystemLogsPage: React.FC = () => {
     const fetchLogs = async () => {
         setLoading(true);
         try {
+            // Helper for timeout
+            const fetchWithTimeout = async (promise: Promise<any>, timeoutMs = 12000) => {
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Request timed out')), timeoutMs)
+                );
+                return Promise.race([promise, timeoutPromise]);
+            };
+
             let query = supabase
                 .from('system_logs')
                 .select(`
@@ -49,7 +57,7 @@ const SystemLogsPage: React.FC = () => {
                 query = query.eq('action_type', actionFilter);
             }
 
-            const { data, error } = await query;
+            const { data, error } = await fetchWithTimeout(query) as any;
 
             if (error) throw error;
 
@@ -69,6 +77,7 @@ const SystemLogsPage: React.FC = () => {
             setLogs(filteredData);
         } catch (error) {
             console.error('Error fetching logs:', error);
+            // Optional: Set an error state to show in UI
         } finally {
             setLoading(false);
         }

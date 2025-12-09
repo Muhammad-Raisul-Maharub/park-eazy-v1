@@ -37,17 +37,19 @@ const ParkingMarkers: React.FC<ParkingMarkersProps> = ({ slots, onMarkerClick })
             });
         };
 
-        const mcg = L.markerClusterGroup({
-            iconCreateFunction,
+        iconCreateFunction,
             maxClusterRadius: 30,
-            spiderfyOnMaxZoom: true,
-            showCoverageOnHover: false,
-            zoomToBoundsOnClick: true,
-            spiderfyDistanceMultiplier: 2,
-            animate: true
-        });
+                spiderfyOnMaxZoom: true,
+                    showCoverageOnHover: false,
+                        zoomToBoundsOnClick: true,
+                            spiderfyDistanceMultiplier: 2,
+                                animate: true,
+                                    disableClusteringAtZoom: 16 // Fix: Disable clustering when zoomed in close
+    });
 
-        const markers = slots.map(slot => {
+    const markers = slots
+        .filter(slot => slot.location && Array.isArray(slot.location) && slot.location.length === 2 && slot.location[0] !== 0 && slot.location[1] !== 0) // Filter invalid [0,0] or null locations
+        .map(slot => {
             return L.marker(slot.location, {
                 icon: getVehicleMarkerIcon(slot.status, slot.type, { isNew: false }, slot.id),
                 title: slot.name,
@@ -57,28 +59,28 @@ const ParkingMarkers: React.FC<ParkingMarkersProps> = ({ slots, onMarkerClick })
             });
         });
 
-        if (markers.length > 0) {
-            (mcg as any).addLayers(markers);
+    if (markers.length > 0) {
+        (mcg as any).addLayers(markers);
+    }
+    mcg.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        const layer = e.layer as any;
+        if (layer.options?.slotData) {
+            onMarkerClick(layer.options.slotData);
         }
-        mcg.on('click', (e) => {
-            L.DomEvent.stopPropagation(e);
-            const layer = e.layer as any;
-            if (layer.options?.slotData) {
-                onMarkerClick(layer.options.slotData);
-            }
-        });
+    });
 
-        map.addLayer(mcg);
-        markerClusterGroupRef.current = mcg;
+    map.addLayer(mcg);
+    markerClusterGroupRef.current = mcg;
 
-        return () => {
-            if (markerClusterGroupRef.current && map.hasLayer(markerClusterGroupRef.current)) {
-                map.removeLayer(markerClusterGroupRef.current);
-            }
-        };
-    }, [map, slots, onMarkerClick]);
+    return () => {
+        if (markerClusterGroupRef.current && map.hasLayer(markerClusterGroupRef.current)) {
+            map.removeLayer(markerClusterGroupRef.current);
+        }
+    };
+}, [map, slots, onMarkerClick]);
 
-    return null;
+return null;
 };
 
 export default ParkingMarkers;

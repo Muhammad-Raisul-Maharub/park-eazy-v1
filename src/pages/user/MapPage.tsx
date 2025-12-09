@@ -286,7 +286,10 @@ const MapPage: React.FC = () => {
         setIsLocating(true);
         setGeolocationError(null);
 
-        if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
+        if (watchIdRef.current !== null) {
+            navigator.geolocation.clearWatch(watchIdRef.current);
+            watchIdRef.current = null;
+        }
 
         const success = (position: GeolocationPosition) => {
             const newLoc: [number, number] = [position.coords.latitude, position.coords.longitude];

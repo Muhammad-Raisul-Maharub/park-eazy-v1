@@ -23,7 +23,7 @@ const ManageUsersPage: React.FC = () => {
     if (!userContext) {
         return <div>Loading users...</div>;
     }
-    
+
     const { users, addUser, updateUser, deleteUser } = userContext;
 
     const handleAddUser = () => {
@@ -37,10 +37,10 @@ const ManageUsersPage: React.FC = () => {
     };
 
     const handleDeleteUser = (user: User) => {
-       setUserToDelete(user);
-       setIsConfirmModalOpen(true);
+        setUserToDelete(user);
+        setIsConfirmModalOpen(true);
     };
-    
+
     const confirmDelete = () => {
         if (userToDelete) {
             deleteUser(userToDelete.id);
@@ -49,21 +49,21 @@ const ManageUsersPage: React.FC = () => {
         }
         setIsConfirmModalOpen(false);
     }
-    
+
     const handleSaveUser = (userData: User) => {
         // Strict check: does this user ID exist in the current state?
         const existingUser = users.find(u => u.id === userData.id);
 
         if (existingUser) {
-             // Update existing user using context
-             updateUser(userData);
-             
-             // Detailed logging for role change
-             if (existingUser.role !== userData.role) {
-                 logContext?.addLog('ROLE_UPDATE', `Changed role for ${userData.name} from ${existingUser.role} to ${userData.role}`);
-             } else {
-                 logContext?.addLog('USER_UPDATE', `Updated details for user ${userData.name}`);
-             }
+            // Update existing user using context
+            updateUser(userData);
+
+            // Detailed logging for role change
+            if (existingUser.role !== userData.role) {
+                logContext?.addLog('ROLE_UPDATE', `Changed role for ${userData.name} from ${existingUser.role} to ${userData.role}`);
+            } else {
+                logContext?.addLog('USER_UPDATE', `Updated details for user ${userData.name}`);
+            }
         } else {
             // Create new user
             const newUser = { ...userData, id: userData.id || `user-${Date.now()}` };
@@ -95,10 +95,6 @@ const ManageUsersPage: React.FC = () => {
         <div className="space-y-6 animate-fadeIn">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Manage All Users</h1>
-                <Button onClick={handleAddUser}>
-                    <PlusCircle className="w-5 h-5 mr-2"/>
-                    Add New User
-                </Button>
             </div>
             <Card>
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700">
@@ -106,11 +102,11 @@ const ManageUsersPage: React.FC = () => {
                         <Filter className="w-5 h-5 text-slate-500" />
                         <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Filter by role:</span>
                         {filterOptions.map(option => (
-                             <button 
-                                key={option.value} 
+                            <button
+                                key={option.value}
                                 onClick={() => setRoleFilter(option.value)}
                                 className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors ${roleFilter === option.value ? 'bg-primary text-white shadow-md' : 'bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600'}`}
-                             >
+                            >
                                 {option.label}
                             </button>
                         ))}
@@ -130,32 +126,33 @@ const ManageUsersPage: React.FC = () => {
                             {filteredUsers.map((user: User) => {
                                 const { icon: Icon, color, label } = roleUI[user.role];
                                 return (
-                                <tr key={user.id} className="border-b border-slate-200 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-9 h-9 rounded-full flex items-center justify-center bg-slate-200 dark:bg-slate-700`}>
-                                                <Icon className={`w-5 h-5 ${color}`} />
+                                    <tr key={user.id} className="border-b border-slate-200 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center bg-slate-200 dark:bg-slate-700`}>
+                                                    <Icon className={`w-5 h-5 ${color}`} />
+                                                </div>
+                                                <span className="font-medium text-slate-800 dark:text-slate-100">{user.name}</span>
                                             </div>
-                                            <span className="font-medium text-slate-800 dark:text-slate-100">{user.name}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-slate-500 dark:text-slate-400 max-w-[150px] sm:max-w-xs truncate" title={user.email}>{user.email}</td>
-                                    <td className="p-4">
-                                        <div className={`inline-flex items-center gap-2 ${color} bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-full`}>
-                                            <Icon className="w-4 h-4" />
-                                            <span className="font-semibold text-xs">{label}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <button onClick={() => handleEditUser(user)} className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-md transition-colors" aria-label={`Edit user ${user.name}`}><Edit className="w-4 h-4" /></button>
-                                            {user.role !== UserRole.SUPER_ADMIN && (
-                                                <button onClick={() => handleDeleteUser(user)} className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-md transition-colors" aria-label={`Delete user ${user.name}`}><Trash2 className="w-4 h-4" /></button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            )})}
+                                        </td>
+                                        <td className="p-4 text-slate-500 dark:text-slate-400 max-w-[150px] sm:max-w-xs truncate" title={user.email}>{user.email}</td>
+                                        <td className="p-4">
+                                            <div className={`inline-flex items-center gap-2 ${color} bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-full`}>
+                                                <Icon className="w-4 h-4" />
+                                                <span className="font-semibold text-xs">{label}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button onClick={() => handleEditUser(user)} className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-md transition-colors" aria-label={`Edit user ${user.name}`}><Edit className="w-4 h-4" /></button>
+                                                {user.role !== UserRole.SUPER_ADMIN && (
+                                                    <button onClick={() => handleDeleteUser(user)} className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-md transition-colors" aria-label={`Delete user ${user.name}`}><Trash2 className="w-4 h-4" /></button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
                         </tbody>
                     </table>
                 </div>
