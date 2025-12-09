@@ -174,7 +174,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
 
     // Real Supabase Login with Password
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -182,6 +182,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (error) {
       setLoading(false);
       throw error;
+    }
+
+    // IMMEDIATE STATE UPDATE: Fix race condition where navigate happens before listener fires
+    if (data.session) {
+      setSession(data.session);
+      if (data.session.user) {
+        // Optimistically set user with basic data while profile fetches
+        // The listener will eventually fetch the full profile and update it properly
+        const userBasic: User = {
+          id: data.session.user.id,
+          email: data.session.user.email!,
+          name: data.session.user.email!.split('@')[0], // Temporary name
+          role: UserRole.USER // Temporary role until profile fetch
+        };
+        setUser(userBasic);
+
+        // Trigger profile fetch immediately to overwrite with correct role
+        fetchUserProfile(data.session.user.id, data.session.user.email!).then(profile => {
+          if (profile && mounted.current) setUser(profile);
+        });
+      }
     }
 
     setLoading(false);

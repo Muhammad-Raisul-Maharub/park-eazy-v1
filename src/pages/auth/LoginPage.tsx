@@ -33,7 +33,7 @@ const LoginPage: React.FC = () => {
       // Check for saved redirect route in order: LocalStorage -> Location State -> URL Query Param
       const savedRoute =
         localStorage.getItem('park-eazy-redirect-after-login') ||
-        (window.history.state?.usr?.from?.pathname) ||
+        // Remove risky history.state validation which can cause loops
         new URLSearchParams(window.location.search).get('redirect');
 
       if (savedRoute) {
