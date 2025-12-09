@@ -1,0 +1,197 @@
+[33mcommit 42ac17112adae357434d1ccb6f05c1993120f671[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Tue Dec 9 21:50:33 2025 +0600
+
+    feat: Implement core map functionality with event handling, parking markers, a draggable bottom sheet component, and a reservation management context.
+
+[33mcommit a7ee9d118df21f7497f7e72782d274a3892fe2b7[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Tue Nov 25 04:08:17 2025 +0600
+
+    feat: Initialize core application with context-based state management, user/admin pages, and remove old Supabase scripts.
+
+[33mcommit cdd5b02d645c53c7109787dcc1cca8af54fd3f0a[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Mon Nov 24 03:36:52 2025 +0600
+
+    feat: implement user map page with interactive map, search, and slot management, alongside a new reservation context.
+
+[33mcommit 2c289ac7ad704f92896d1ea1b4b8d21e9779f3ed[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Mon Nov 24 03:21:21 2025 +0600
+
+    feat: Configure cache control for development and production, and enable build output hashing.
+
+[33mcommit 486154dfaa2f72c0d25657e7a777942403362f0a[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 23:45:03 2025 +0600
+
+    feat: add user signup page with email/password and Google authentication via Supabase.
+
+[33mcommit 17d8da556eccdfa9d7258ad1dee621ce6b308f14[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 23:18:23 2025 +0600
+
+    update Auth
+
+[33mcommit d62bde1241857a8902c5761575903183025f2e58[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 22:28:24 2025 +0600
+
+    feat: Initialize core application structure with routing and Supabase client, and expand project documentation.
+
+[33mcommit ce1688b1bf42433aa707e71eae11abd7b4c5e016[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 21:27:20 2025 +0600
+
+    feat: add SlotEditModal component for creating and editing parking slot details with map integration and geocoding.
+
+[33mcommit 0fe5905950e6f1876677481e23a5e4e339e72762[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 20:52:38 2025 +0600
+
+    feat: implement user signup page with email/password and Google authentication.
+
+[33mcommit 0e006c27d05f0c895c13e587d75b70ff49721c05[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 18:48:45 2025 +0600
+
+    feat: Migrate payment methods from localStorage to Supabase database for multi-device sync
+
+[33mcommit d1a4199ac05c3301dfe97001e5557d25a0683cc4[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 17:51:02 2025 +0600
+
+    fix: Scope payment methods by user ID to prevent data leaks across accounts
+
+[33mcommit f5e43ff2d97b047f4f938636f06cb4f8466d1c85[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 17:03:28 2025 +0600
+
+    fix: Add leaflet.markercluster import to enable parking markers on map
+
+[33mcommit 79eeb357d0dc3bfe0fcf6740216250bc564a322d[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 16:07:12 2025 +0600
+
+    trigger: Force Vercel redeploy with latest changes (20m radius + pulse animation)
+
+[33mcommit 9cc7e1a60bce10f3345250dff398e1821608fb13[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 15:30:47 2025 +0600
+
+    feat: Add MapPage component and introduce global styles for Leaflet maps, marker clusters, and UI enhancements.
+
+[33mcommit 21e5a21c7828a4a95d23ece11844c8dc93d81b6b[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 13:55:53 2025 +0600
+
+    feat: add Leaflet type definitions to devDependencies
+
+[33mcommit eb95dc119f94a72dbb98a56f478d58b521a9befe[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 02:18:59 2025 +0600
+
+    feat: Add admin parking slot management page, user map page, and reservation context.
+
+[33mcommit 4e5242adfee4267775bc4dbb60e1506839f4bd37[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 01:48:37 2025 +0600
+
+    feat: implement UserContext and provider for user data management
+
+[33mcommit 6d8311bcab4aa590065d47689c05badf088a8095[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 01:38:40 2025 +0600
+
+    fix: Add cache control meta tags to index.html and expose Leaflet globally for plugin compatibility.
+
+[33mcommit 24eb43323d2d42d08c5d8f1d1944c810c3765d64[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 01:34:33 2025 +0600
+
+    feat: Add AuthContext and AuthProvider for managing user authentication state with Supabase.
+
+[33mcommit 10eacd3ef771490b803b6605b3c3927281e0524f[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 01:29:25 2025 +0600
+
+    feat: add ConnectionTest page to verify Supabase connectivity and environment variables
+
+[33mcommit d8be660a0a0cbba5c64727709e56cd901ea63519[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 01:26:21 2025 +0600
+
+    feat: Add a new page for testing Supabase connection and displaying environment variable status.
+
+[33mcommit 27b72e797f65be50222fca96b6106e492331e0d4[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 01:20:34 2025 +0600
+
+    feat: Add Auth and Reservation contexts for user authentication and parking slot reservation management.
+
+[33mcommit aa85c2026c65c2c0473156b2e745cce2a538d72b[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 00:57:49 2025 +0600
+
+    feat: Add a Supabase connection test page with environment variable checks and retry functionality.
+
+[33mcommit 347874a37d52e3838d7ccc9aeaea62b2b901b31d[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 00:52:13 2025 +0600
+
+    fix: Resolve navigation loop, improve login errors, add connection test
+
+[33mcommit 378d3e78f8139e347171c0126266b076225525ec[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sun Nov 23 00:26:32 2025 +0600
+
+    Updated MapPage.tsx
+
+[33mcommit 61a48e8bb3dd364b8987cb9fd208e0f86a9b6ce4[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sat Nov 22 23:57:06 2025 +0600
+
+    docs: Prefix README header with 'git '
+
+[33mcommit cbedf39bb245f22eb1d5c330af73a0e36e6973d7[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sat Nov 22 23:20:21 2025 +0600
+
+    fix: Add timeouts to prevent infinite loading (Auth 10s, Data 8s)
+
+[33mcommit 1dc96ca9456b42f17f584d1f19f89d5528d1e277[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sat Nov 22 23:04:38 2025 +0600
+
+    refactor: Remove all mock data and clean up unused code
+
+[33mcommit ce6dde9abdc2063fddea10e07312b5e1c9b82a1a[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sat Nov 22 22:57:05 2025 +0600
+
+    fix: Make Supabase connection test non-blocking
+
+[33mcommit 70e15d6e2668e9474c9dce6d6b4f1f4feb761ffa[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sat Nov 22 22:47:59 2025 +0600
+
+    fix: Resolve infinite loading by making AuthContext optional in ReservationProvider
+
+[33mcommit ccc285ed47fc93e5ec4301197fc2dade603fc57a[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sat Nov 22 22:32:19 2025 +0600
+
+    feat: add Currency Manager page for viewing and editing exchange rates
+
+[33mcommit d39ea8639717d79ec8e35551a642cea3a2773b8f[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sat Nov 22 22:18:46 2025 +0600
+
+    feat: implement ReservationContext for managing parking slots and user reservations with Supabase integration and CRUD operations.
+
+[33mcommit 3b9ffd2121c67cae0b7ebbcafaf23f1a55d5345d[m
+Author: Muhammad Raisul Maharub <raisulmaharub5@gmail.com>
+Date:   Sat Nov 22 21:48:30 2025 +0600
+
+    feat: Add ReservationContext for managing parking slots and user reservations with Supabase
