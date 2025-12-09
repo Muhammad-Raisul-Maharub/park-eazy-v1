@@ -30,13 +30,17 @@ const LoginPage: React.FC = () => {
     try {
       await login(email, password);
 
-      // Check for saved redirect route
-      const savedRoute = localStorage.getItem('park-eazy-redirect-after-login');
+      // Check for saved redirect route in order: LocalStorage -> Location State -> URL Query Param
+      const savedRoute =
+        localStorage.getItem('park-eazy-redirect-after-login') ||
+        (window.history.state?.usr?.from?.pathname) ||
+        new URLSearchParams(window.location.search).get('redirect');
+
       if (savedRoute) {
         localStorage.removeItem('park-eazy-redirect-after-login');
 
-        // Validate route is not login/signup before redirecting
-        if (savedRoute !== '/login' && savedRoute !== '/signup') {
+        // Validate route is not login/signup before redirecting to prevent loops
+        if (savedRoute !== '/login' && savedRoute !== '/signup' && !savedRoute.includes('login')) {
           console.log('[LOGIN] Redirecting to saved route:', savedRoute);
           navigate(savedRoute);
           return;

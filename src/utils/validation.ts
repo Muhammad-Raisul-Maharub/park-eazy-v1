@@ -15,7 +15,27 @@ export const validateCard = (cardDetails: CardDetails): Record<string, string> =
     const errors: Record<string, string> = {};
     const { number, expiry, cvc, name } = cardDetails;
 
-    if (number.replace(/\s/g, '').length < 16) errors.number = "Card number must be 16 digits.";
+    // Luhn Algorithm Check
+    const luhnCheck = (val: string) => {
+        let sum = 0;
+        let shouldDouble = false;
+        for (let i = val.length - 1; i >= 0; i--) {
+            let digit = parseInt(val.charAt(i));
+            if (shouldDouble) {
+                if ((digit *= 2) > 9) digit -= 9;
+            }
+            sum += digit;
+            shouldDouble = !shouldDouble;
+        }
+        return (sum % 10) === 0;
+    };
+
+    const cleanNum = number.replace(/\s/g, '');
+    if (!/^\d{13,19}$/.test(cleanNum)) {
+        errors.number = "Card number must be between 13 and 19 digits.";
+    } else if (!luhnCheck(cleanNum)) {
+        errors.number = "Invalid card number.";
+    }
 
     const expiryParts = expiry.split('/');
     const expMonth = parseInt(expiryParts[0], 10);
@@ -28,7 +48,7 @@ export const validateCard = (cardDetails: CardDetails): Record<string, string> =
 
     if (!/^\d{3,4}$/.test(cvc)) errors.cvc = "CVC must be 3 or 4 digits.";
     if (name.trim().length < 2) errors.name = "Name is required.";
-    
+
     return errors;
 };
 
