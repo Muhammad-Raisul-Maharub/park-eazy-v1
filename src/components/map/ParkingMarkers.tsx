@@ -40,12 +40,13 @@ const ParkingMarkers: React.FC<ParkingMarkersProps> = ({ slots, onMarkerClick })
         const mcg = L.markerClusterGroup({
             iconCreateFunction,
             maxClusterRadius: 30,
-            spiderfyOnMaxZoom: true,
+
             showCoverageOnHover: false,
             zoomToBoundsOnClick: true,
             spiderfyDistanceMultiplier: 2,
             animate: true,
-            disableClusteringAtZoom: 16 // Fix: Disable clustering when zoomed in close
+            disableClusteringAtZoom: 1, // Disable clustering almost everywhere to show individual markers
+            spiderfyOnMaxZoom: true, // Keep spiderfy for exact same coordinates
         });
 
         const markers = slots
